@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -x -o nounset -o pipefail -o errexit
+
+TOP_LEVEL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+BUILD_DIR="${TOP_LEVEL_DIR}/Build"
+INSTALL_DIR="${TOP_LEVEL_DIR}/Install"
+
+rm -rf ${BUILD_DIR}
+rm -rf ${INSTALL_DIR}
+
+(
+    pylint --rcfile .pylintrc --errors-only src
+    pyinstaller BedLeveler5000.spec --workpath=${BUILD_DIR} --distpath=${INSTALL_DIR}
+)
