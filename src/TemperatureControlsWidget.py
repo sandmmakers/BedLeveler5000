@@ -15,6 +15,7 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
     def _createWidgets(self):
         # Bed widgets
         self.bedTempSpinBox = QtWidgets.QDoubleSpinBox()
+        self.bedTempSpinBox.setMaximum(200)
         self.bedTempSpinBox.valueChanged.connect(self._requestBedHeaterChange)
         self.bedHeaterOnButton = QtWidgets.QRadioButton('On')
         self.bedHeaterOnButton.toggled.connect(self._requestBedHeaterChange)
@@ -28,6 +29,7 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
 
         # Nozzle widgets
         self.nozzleTempSpinBox = QtWidgets.QDoubleSpinBox()
+        self.nozzleTempSpinBox.setMaximum(500)
         self.nozzleTempSpinBox.valueChanged.connect(self._requestNozzleHeaterChange)
         self.nozzleHeaterOnButton = QtWidgets.QRadioButton('On')
         self.nozzleHeaterOnButton.toggled.connect(self._requestNozzleHeaterChange)
