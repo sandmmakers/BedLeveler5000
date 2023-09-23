@@ -7,15 +7,15 @@ class CommandM140(CommandBase):
     LINE_COUNT = 1
 
     def __init__(self, id_, *, context=None, i=None, s=None):
-        super().__init__(id_, context)
-
         self.i = i
         self.s = s
 
         iPart = '' if self.i is None else f' I{self.i}'
         sPart = '' if self.s is None else Converter.floatToStr(self.s, prefix=' S')
 
-        self.request = self.NAME + iPart + sPart
+        super().__init__(id_,
+                         self.NAME + iPart + sPart,
+                         context)
 
     def parseResponse(self, lines):
         # Line 0: ok

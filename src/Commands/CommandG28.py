@@ -6,8 +6,6 @@ class CommandG28(CommandBase):
     LINE_COUNT = 2
 
     def __init__(self, id_, *, context=None, l=False, o=False, r=False, x=False, y=False, z=False):
-        super().__init__(id_, context)
-
         self.l = l
         self.o = o
         self.r = r
@@ -22,7 +20,9 @@ class CommandG28(CommandBase):
         yPart = ' Y' if self.y else ''
         zPart = ' Z' if self.z else ''
 
-        self.request = self.NAME + lPart + oPart + rPart + xPart + yPart + zPart
+        super().__init__(id_,
+                         self.NAME + lPart + oPart + rPart + xPart + yPart + zPart,
+                         context)
 
     def parseResponse(self, lines):
         # Line 0: position

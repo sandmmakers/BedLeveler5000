@@ -7,8 +7,6 @@ class CommandG30(CommandBase):
     LINE_COUNT = 3
 
     def __init__(self, id_, *, context=None, c=None, e=None, x=None, y=None):
-        super().__init__(id_, context)
-
         self.c = c
         self.e = e
         self.x = x
@@ -19,7 +17,9 @@ class CommandG30(CommandBase):
         xPart = '' if self.x is None else Converter.floatToStr(self.x, prefix=' X')
         yPart = '' if self.y is None else Converter.floatToStr(self.y, prefix=' Y')
 
-        self.request = self.NAME + cPart + ePart + xPart + yPart
+        super().__init__(id_,
+                         self.NAME + cPart + ePart + xPart + yPart,
+                         context)
 
     def parseResponse(self, lines):
         # Line 0: bed

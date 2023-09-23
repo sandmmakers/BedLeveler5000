@@ -6,10 +6,10 @@ class CommandM400(CommandBase):
     LINE_COUNT = 1
 
     def __init__(self, id_, *, context=None):
-        super().__init__(id_, context)
-
         # Build request
-        self.request = self.NAME
+        super().__init__(id_,
+                         self.NAME,
+                         context)
 
     def parseResponse(self, lines):
         # Line 0: ok

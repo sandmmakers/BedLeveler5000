@@ -8,9 +8,13 @@ class CommandBase(ABC):
     def LINE_COUNT(cls):
         raise NotImplementedError
 
-    def __init__(self, id_, context=None):
+    def __init__(self, id_, request, context=None):
         self.id = id_
+        self.request = request
         self.context = context
+
+    def __str__(self):
+        return f'Id: {self.id} Request: {self.request}'
 
     def verifyLineCount(self, lines):
         if len(lines) != self.LINE_COUNT:

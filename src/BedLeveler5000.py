@@ -19,6 +19,7 @@ from collections import namedtuple
 from enum import IntEnum
 from enum import StrEnum
 import json
+import logging
 import pathlib
 import sys
 
@@ -26,6 +27,23 @@ Point2D = namedtuple('Point2D', ['x', 'y'])
 
 # Determine the effective base directory
 BASE_DIR = pathlib.Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else pathlib.Path(__file__).parent.parent
+
+def configureLogging(level=None, console=False, file=None):
+    LOGGING_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+    logger = logging.getLogger()
+    logger.setLevel(99 if level is None else getattr(logging, level.upper()))
+    formatter = logging.Formatter(LOGGING_FORMAT)
+
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setLevel(logger.level if console else 99)
+    consoleHandler.setFormatter(formatter)
+    logger.addHandler(consoleHandler)
+
+    if file is not None:
+        fileHandler = logging.FileHandler(file)
+        fileHandler.setFormatter(formatter)
+        logger.addHandler(fileHandler)
 
 class MainWindow(QtWidgets.QMainWindow):
     class State(StrEnum):
@@ -41,7 +59,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, *args, printersDir, printer=None, port=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.setWindowTitle('Bed Leveler 5000')
+        self.setWindowTitle(QtCore.QCoreApplication.applicationName())
+        self.logger = logging.getLogger(QtCore.QCoreApplication.applicationName())
 
         self.connection = Connection(commonSignal=True)
         self.connection.received.connect(self._processResponse)
@@ -60,7 +79,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if port is not None:
             portIndex = self.portComboBox.findText(port)
             if portIndex == -1:
-                WarningDialog(self, 'Failed to find requested port.')
+                self._warning('Failed to find requested port.')
             else:
                 self.portComboBox.setCurrentIndex(portIndex)
 
@@ -78,13 +97,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.printerComboBox.addItem(printerInfo['displayName'], printerInfo)
 
         if self.printerComboBox.count() <= 0:
-            FatalErrorDialog(self, 'No printers found.')
+            self._fatalError('No printers found.')
 
         self.printerComboBox.blockSignals(False)
 
         index = 0 if desiredPrinter is None else self.printerComboBox.findText(desiredPrinter)
         if index == -1:
-            WarningDialog(self, 'Failed to find requested printer.')
+            self._warning('Failed to find requested printer.')
         else:
             self.printerComboBox.setCurrentIndex(index)
 
@@ -193,12 +212,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.temperatureTimer = QtCore.QTimer()
         self.temperatureTimer.setInterval(1000) # TODO: Make the interval configurable
         self.temperatureTimer.timeout.connect(self.requestTemperature)
-
-    def _error(self, message):
-        ErrorDialog(self, message)
-        self._closeSerialPort()
-        for dialog in self.dialogs.values():
-            dialog.reject()
 
     def _processResponse(self, name, id_, context, response):
         if name in ('M104', 'M140'):
@@ -431,6 +444,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self._updateState(self.State.UPDATING_MESH)
         self.dialogs['updatingMesh'].show()
 
+    def _fatalError(self, message):
+        self.logger.critical(message)
+        self._closeSerialPort()
+        for dialog in self.dialogs.values():
+            dialog.reject()
+        FatalErrorDialog(self, message)
+
+    def _error(self, message):
+        self.logger.error(message)
+        self._closeSerialPort()
+        for dialog in self.dialogs.values():
+            dialog.reject()
+        ErrorDialog(self, message)
+
+    def _warning(self, message):
+        self.logger.warning(message)
+        WarningDialog(self, message)
+
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon((BASE_DIR / 'Resources' / 'Icon-128x128.png').as_posix()))
@@ -453,8 +484,14 @@ if __name__ == '__main__':
     parser.add_argument('--printers-dir', default=BASE_DIR / 'Printers', type=pathlib.Path, help='printer configuration directory')
     parser.add_argument('--printer', default=None, help='printer to use')
     parser.add_argument('--port', default=None, help='port to use')
+    parser.add_argument('--log_level', choices=['debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
+    parser.add_argument('--log_console', action='store_true', help='log to the console')
+    parser.add_argument('--log_file', type=pathlib.Path, default=None, help='log file')
 
     args = parser.parse_args()
+
+    # Configure logging
+    configureLogging(level=args.log_level, console=args.log_console, file=args.log_file)
 
     # Verify the printers directory exists
     if args.printers_dir is not None and not args.printers_dir.exists():

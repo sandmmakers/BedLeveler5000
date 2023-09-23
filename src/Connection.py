@@ -11,7 +11,9 @@ from Commands.CommandM851 import CommandM851
 from Commands.GCodeError import GCodeError
 from PySide6 import QtCore
 from PySide6 import QtSerialPort
+import logging
 import queue
+import math
 
 class Connection(QtCore.QObject):
     received = QtCore.Signal(str, str, dict, dict)
@@ -28,6 +30,9 @@ class Connection(QtCore.QObject):
 
     def __init__(self, *args, commonSignal=False, separateSignals=False, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Get logger
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         # Signal configuration
         self.commonSignal = commonSignal
@@ -81,7 +86,7 @@ class Connection(QtCore.QObject):
             case _:
                 message = 'An unidentified error occured.'
 
-        raise IOError(f'Serial port error: {message}')
+        self._error(f'Serial port error: {message}')
 
     def connected(self):
         return self.serialPort.isOpen()
@@ -106,32 +111,44 @@ class Connection(QtCore.QObject):
         self.serialPort.setFlowControl(flowControl)
 
         if not self.serialPort.open(QtCore.QIODevice.ReadWrite):
-            raise IOError(f'Failed to open {portName}.')
+            self._error(f'Failed to open {portName}.')
 
         if clear and not self.serialPort.clear():
-            raise IOError(f'Failed to clear {portName}.')
+            self._error(f'Failed to clear {portName}.')
+
+        self.logger.info(f'Opened {self.serialPort.portName()}')
 
     def close(self):
         assert(self.serialPort.isOpen())
 
         self.serialPort.close()
-        print('Closed')
+        self.logger.info(f'Closed {self.serialPort.portName()}')
 
     def _readData(self):
         self.readBuffer += self.serialPort.readAll()
+
+        # Log the read buffer
+        self.logger.debug(f'Read buffer: ')
+        for batch in range(int(math.ceil(self.readBuffer.length() / 16))):
+            startIndex = 16 * batch
+            stopIndex = min(startIndex + 16, self.readBuffer.length())
+            message = f'[0x{startIndex:02X}]:'
+            for currentIndex in range(startIndex, stopIndex):
+                message += f' {self.readBuffer[currentIndex].hex().upper()}'
+            self.logger.debug(message)
 
         while (index := self.readBuffer.indexOf(b'\n')) > -1:
             # Extract line
             try:
                 line = str(self.readBuffer[:index], 'ascii') # TODO: Verify the correct encoding
             except:
-                print(f'Detected bad bytes: {self.readBuffer.data().hex()}.')
+                self.logger.warn(f'Detected bad bytes: {self.readBuffer.data().hex()}.')
                 self.readBuffer.clear()
                 continue
 
             self.readBuffer = self.readBuffer[index+1:]
 
-            print(f'Line: {line}')
+            self.logger.debug(f'Line: {line}')
 
             # Skip echo lines
             if line.startswith('echo:'):
@@ -144,12 +161,18 @@ class Connection(QtCore.QObject):
                 assert(not self.jobQueue.empty())
                 command = self.jobQueue.get()
 
+                self.logger.info(f'Processing command - {command}')
+
                 if len(self.readLines) != command.LINE_COUNT:
-                    self._error(f'Incorrect number of response lines detected for command: {command.NAME} ({command.id}) - {len(self.readLines)} {command.LINE_COUNT}.')
+                    message = f'Incorrect number of response lines detected for command: {command.NAME} ({command.id}) - {len(self.readLines)} {command.LINE_COUNT}.'
                     for line in self.readLines:
-                        self._error(line)
+                        message += line
+                    self._error(message)
                 else:
-                    commandLines = self.readLines[0:command.LINE_COUNT]
+                    # Log the response lines
+                    for line in self.readLines[0:command.LINE_COUNT]:
+                        self.logger.info(f'Response: "{line}"')
+
                     response = command.parseResponse(self.readLines[0:command.LINE_COUNT])
 
                     if self.commonSignal:
@@ -160,9 +183,8 @@ class Connection(QtCore.QObject):
                 self.readLines.clear()
 
     def _sendCommand(self, command):
-        print(f'Sending: ID: {command.id} - {command.request}')
+        self.logger.info(f'Sending command - {command}')
         self.jobQueue.put(command)
-        print(f'Command: {command.request}')
         self.serialPort.write((command.request + '\n').encode())
 
     def sendG0(self, id_, *, context=None, **kwargs):
@@ -196,7 +218,8 @@ class Connection(QtCore.QObject):
         self._sendCommand(CommandM851(id_, context=context, **kwargs))
 
     def _error(self, message):
-        print(f'ERROR: {message}')
+        self.logger.error(message)
+        raise IOError(message)
 
 if __name__ == '__main__':
     # Main only imports

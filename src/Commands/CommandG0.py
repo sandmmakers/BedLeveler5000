@@ -7,8 +7,6 @@ class CommandG0(CommandBase):
     LINE_COUNT = 1
 
     def __init__(self, id_, *, context=None, e=None, f=None, s=None, x=None, y=None, z=None):
-        super().__init__(id_, context)
-
         self.e = e
         self.f = f
         self.s = s
@@ -23,7 +21,10 @@ class CommandG0(CommandBase):
         xPart = '' if self.x is None else Converter.floatToStr(self.x, prefix=' X')
         yPart = '' if self.y is None else Converter.floatToStr(self.y, prefix=' Y')
         zPart = '' if self.z is None else Converter.floatToStr(self.z, prefix=' Z')
-        self.request = self.NAME + ePart + fPart + sPart + xPart + yPart + zPart
+
+        super().__init__(id_,
+                         self.NAME + ePart + fPart + sPart + xPart + yPart + zPart,
+                         context)
 
     def parseResponse(self, lines):
         # Line 0: ok

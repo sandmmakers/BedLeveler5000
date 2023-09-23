@@ -6,15 +6,15 @@ class CommandM105(CommandBase):
     LINE_COUNT = 1
 
     def __init__(self, id_, *, context=None, r=False, t=None):
-        super().__init__(id_, context)
-
         self.r = r
         self.t = t
 
         rPart = ' R' if self.r else ''
         tPart = f' T{self.t}' if self.t is not None else ''
 
-        self.request = self.NAME + rPart + tPart
+        super().__init__(id_,
+                         self.NAME + rPart + tPart,
+                         context)
 
     def parseResponse(self, lines):
         # Line 0: 'ok T:<FLOAT> /<FLOAT> B:<FLOAT> /<FLOAT> @:<FLOAT> B@:<FLOAT>

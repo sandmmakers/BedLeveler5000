@@ -6,8 +6,6 @@ class CommandM114(CommandBase):
     LINE_COUNT = 2
 
     def __init__(self, id_, *, context=None, d=None, e=None, r=None):
-        super().__init__(id_, context)
-
         self.d = d
         self.e = e
         self.r = r
@@ -16,7 +14,9 @@ class CommandM114(CommandBase):
         ePart = ' E' if self.e else ''
         rPart = ' R' if self.r else ''
 
-        self.request = self.NAME + dPart + ePart + rPart
+        super().__init__(id_,
+                         self.NAME + dPart + ePart + rPart,
+                         context)
 
     def parseResponse(self, lines):
         # Line 0: position

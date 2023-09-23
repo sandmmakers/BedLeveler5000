@@ -7,8 +7,6 @@ class CommandM851(CommandBase):
     LINE_COUNT = 2
 
     def __init__(self, id_, *, context=None, x=None, y=None, z=None):
-        super().__init__(id_, context)
-
         self.x = x
         self.y = y
         self.z = z
@@ -17,7 +15,9 @@ class CommandM851(CommandBase):
         yPart = '' if self.y is None else Converter.floatToStr(self.y, prefix=' Y')
         zPart = '' if self.z is None else Converter.floatToStr(self.z, prefix=' Z')
 
-        self.request = self.NAME + xPart + yPart + zPart
+        super().__init__(id_,
+                         self.NAME + xPart + yPart + zPart,
+                         context)
 
     def parseResponse(self, lines):
         # Line 0: '  M851 X<FLOAT> Y<FLOAT> Z<FLOAT> ; (mm)'
