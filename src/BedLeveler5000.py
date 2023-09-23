@@ -8,6 +8,7 @@ from Dialogs.NoButtonStatusDialog import NoButtonStatusDialog
 from Dialogs.ManualProbeDialog import ManualProbeDialog
 from Dialogs.AboutDialog import AboutDialog
 from Dialogs.WarningDialog import WarningDialog
+from Dialogs.ErrorDialog import ErrorDialog
 from Dialogs.FatalErrorDialog import FatalErrorDialog
 from PySide6 import QtCore
 from PySide6 import QtGui
@@ -169,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.helpMenu = QtWidgets.QMenu('Help', self)
         self.aboutAction = QtGui.QAction('About', self)
-        self.aboutAction.triggered.connect(lambda : self.aboutDialog.exec())
+        self.aboutAction.triggered.connect(lambda : self.dialogs['about'].exec())
         self.helpMenu.addAction(self.aboutAction)
         self.aboutQtAction = QtGui.QAction('About Qt', self)
         self.aboutQtAction.triggered.connect(qApp.aboutQt)
@@ -180,18 +181,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStatusBar(StatusBar())
 
     def _createDialogs(self):
-        self.homingDialog = HomingDialog()
-        self.zProbeOffsetDialog = NoButtonStatusDialog(text='Getting probe offsets.')
-        self.initializingMeshDialog = NoButtonStatusDialog(text='Initializing mesh.')
-        self.manualProbeDialog = ManualProbeDialog()
-        self.updatingMeshDialog = NoButtonStatusDialog(text='Updating mesh.')
-        self.aboutDialog = AboutDialog()
+        self.dialogs = {'homing': HomingDialog(),
+                        'zProbeOffset': NoButtonStatusDialog(text='Getting probe offsets.'),
+                        'initializingMesh': NoButtonStatusDialog(text='Initializing mesh.'),
+                        'manualProbe': ManualProbeDialog(),
+                        'updatingMesh': NoButtonStatusDialog(text='Updating mesh.'),
+                        'about': AboutDialog()}
 
     def _createTimers(self):
         self.temperatureJobPending = False
         self.temperatureTimer = QtCore.QTimer()
         self.temperatureTimer.setInterval(1000) # TODO: Make the interval configurable
         self.temperatureTimer.timeout.connect(self.requestTemperature)
+
+    def _error(self, message):
+        ErrorDialog(self, message)
+        self._closeSerialPort()
+        for dialog in self.dialogs.values():
+            dialog.reject()
 
     def _processResponse(self, name, id_, context, response):
         if name in ('M104', 'M140'):
@@ -212,12 +219,12 @@ class MainWindow(QtWidgets.QMainWindow):
                     assert(id_ == 'zProbeOffsets')
                     self.zProbeOffsetX = response['x']
                     self.zProbeOffsetY = response['y']
-                    self.zProbeOffsetDialog.accept()
+                    self.dialogs['zProbeOffset'].accept()
                     self.home(True)
 
                 case self.State.INITIAL_HOMING:
                     assert(id_ == 'homing')
-                    self.homingDialog.accept()
+                    self.dialogs['homing'].accept()
                     self.initMesh()
 
                 case self.State.INITIALIZING_MESH:
@@ -225,13 +232,17 @@ class MainWindow(QtWidgets.QMainWindow):
                         self.connection.sendG42('initMesh-moveToMeshFrontLeftCoordinate', f = 3000, i = 0, j = 0)
 
                     elif id_ == 'initMesh-moveToMeshFrontLeftCoordinate':
-                        self.connection.sendM400('initMesh-waitForMeshFrontLeftCoordinate')
-
-                    elif id_ == 'initMesh-waitForMeshFrontLeftCoordinate':
                         self.connection.sendM114('initMesh-getRawMeshFrontLeftCoordinate')
 
                     elif id_ == 'initMesh-getRawMeshFrontLeftCoordinate':
                         self.rawMeshFrontLeftCoordinate = Point2D(response['x'], response['y'])
+                        if self.rawMeshFrontLeftCoordinate == Point2D(0, 0):
+                            self._error( 'The printer doesn\'t appear to have an automatic bed leveling mesh.\n' \
+                                        f'Please perform automatic bed leveling and then try using {QtCore.QCoreApplication.applicationName()} again.')
+                            return
+                        self.connection.sendM400('initMesh-waitForMeshFrontLeftCoordinate')
+
+                    elif id_ == 'initMesh-waitForMeshFrontLeftCoordinate':
                         self.connection.sendG42('initMesh-moveToMeshBackRightCoordinate', f = 3000,
                                                                                  i = self.printerInfo['mesh']['columnCount'] - 1,
                                                                                  j = self.printerInfo['mesh']['rowCount'] - 1)
@@ -256,7 +267,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                 self.meshCoordinates[row][column] = Point2D(x = xBase + column*xStep,
                                                                             y = y)
 
-                        self.initializingMeshDialog.accept()
+                        self.dialogs['initializingMesh'].accept()
                         self._updateState(self.State.CONNECTED)
 
                     else:
@@ -270,7 +281,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
                 case self.State.USER_HOMING:
                     assert(id_ == 'homing')
-                    self.homingDialog.accept()
+                    self.dialogs['homing'].accept()
                     self._updateState(self.State.CONNECTED)
 
                 case self.State.MANUAL_PROBE:
@@ -279,7 +290,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
                     elif id_ == 'manualProbeProbe':
                         self.manualWidget.reportProbe(context['name'], response)
-                        self.manualProbeDialog.accept()
+                        self.dialogs['manualProbe'].accept()
                         self._updateState(self.State.CONNECTED)
 
                     else:
@@ -301,7 +312,7 @@ class MainWindow(QtWidgets.QMainWindow):
                             context['row'] += 1
                             if context['row'] >= len(self.meshCoordinates):
                                 print(f'mesh done {context["row"]}{context["column"]}')
-                                self.updatingMeshDialog.accept()
+                                self.dialogs['updatingMesh'].accept()
                                 self._updateState(self.State.CONNECTED)
                                 return
 
@@ -375,14 +386,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.connection.sendM851('zProbeOffsets')
         self._updateState(self.State.GETTING_Z_PROBE_OFFSETS)
-        self.zProbeOffsetDialog.show()
+        self.dialogs['zProbeOffset'].show()
 
     def home(self, initializing):
         self.connection.sendG28('homing')
-        self.homingDialog.setAxes(x=True, y=True, z=True)
+        self.dialogs['homing'].setAxes(x=True, y=True, z=True)
 
         self._updateState(self.State.INITIAL_HOMING if initializing else self.State.USER_HOMING)
-        self.homingDialog.show()
+        self.dialogs['homing'].show()
 
     def initMesh(self):
         self.rawMeshFrontLeftCoordinate = None
@@ -392,7 +403,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.connection.sendG0('initMesh-RaiseZ', z=3)
 
         self._updateState(self.State.INITIALIZING_MESH)
-        self.initializingMeshDialog.show()
+        self.dialogs['initializingMesh'].show()
 
     def manualProbe(self, name, x, y):
         assert(self.connection.connected())
@@ -404,9 +415,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Ensure the nozzle will not scrape the print surface
         self.connection.sendG0('manualProbeMove', context=context, z=3)
 
-        self.manualProbeDialog.setProbePoint(**context)
+        self.dialogs['manualProbe'].setProbePoint(**context)
         self._updateState(self.State.MANUAL_PROBE)
-        self.manualProbeDialog.show()
+        self.dialogs['manualProbe'].show()
 
     def updateMesh(self):
         assert(self.connection.connected())
@@ -418,7 +429,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                z=3)
 
         self._updateState(self.State.UPDATING_MESH)
-        self.updatingMeshDialog.show()
+        self.dialogs['updatingMesh'].show()
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
