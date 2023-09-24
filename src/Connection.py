@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from Commands.CommandG0 import CommandG0
 from Commands.CommandG28 import CommandG28
 from Commands.CommandG30 import CommandG30

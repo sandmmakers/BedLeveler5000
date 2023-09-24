@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from Mesh3DWidget import Mesh3DWidget
 from MeshNumberWidget import MeshNumberWidget
 from PySide6 import QtCore

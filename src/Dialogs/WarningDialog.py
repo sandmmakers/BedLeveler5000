@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from PySide6 import QtWidgets
 
 def WarningDialog(parent, message):

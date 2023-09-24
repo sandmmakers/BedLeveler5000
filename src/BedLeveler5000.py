@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from Connection import Connection
 from ManualWidget import ManualWidget
 from MeshWidget import MeshWidget
