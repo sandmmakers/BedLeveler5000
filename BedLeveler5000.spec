@@ -7,7 +7,7 @@ a = Analysis(
     datas=[('Printers', 'Printers'),
            ('Resources', 'Resources'),
            ('Third Party', 'Third Party'),
-           ('GPLv3.txt', '.')],
+           ('LICENSE', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
