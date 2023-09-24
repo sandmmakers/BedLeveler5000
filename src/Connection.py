@@ -7,6 +7,7 @@ from Commands.CommandG42 import CommandG42
 from Commands.CommandM104 import CommandM104
 from Commands.CommandM105 import CommandM105
 from Commands.CommandM114 import CommandM114
+from Commands.CommandM118 import CommandM118
 from Commands.CommandM140 import CommandM140
 from Commands.CommandM400 import CommandM400
 from Commands.CommandM851 import CommandM851
@@ -26,6 +27,7 @@ class Connection(QtCore.QObject):
     receivedM104 = QtCore.Signal(str, dict, dict)
     receivedM105 = QtCore.Signal(str, dict, dict)
     receivedM114 = QtCore.Signal(str, dict, dict)
+    receivedM118 = QtCore.Signal(str, dict, dict)
     receivedM140 = QtCore.Signal(str, dict, dict)
     receivedM400 = QtCore.Signal(str, dict, dict)
     receivedM851 = QtCore.Signal(str, dict, dict)
@@ -57,6 +59,7 @@ class Connection(QtCore.QObject):
         self.signalMap[CommandM104.NAME] = self.receivedM104
         self.signalMap[CommandM105.NAME] = self.receivedM105
         self.signalMap[CommandM114.NAME] = self.receivedM114
+        self.signalMap[CommandM118.NAME] = self.receivedM118
         self.signalMap[CommandM140.NAME] = self.receivedM140
         self.signalMap[CommandM400.NAME] = self.receivedM400
         self.signalMap[CommandM851.NAME] = self.receivedM851
@@ -210,6 +213,9 @@ class Connection(QtCore.QObject):
     def sendM114(self, id_, *, context=None, **kwargs):
         self._sendCommand(CommandM114(id_, context=context, **kwargs))
 
+    def sendM118(self, id_, *, context=None, **kwargs):
+        self._sendCommand(CommandM118(id_, context=context, **kwargs))
+
     def sendM140(self, id_, *, context=None, **kwargs):
         self._sendCommand(CommandM140(id_, context=context, **kwargs))
 
@@ -240,13 +246,14 @@ if __name__ == '__main__':
     connection.receivedM104.connect(lambda id_, context, response: print(f'Received M104 ({id_}): {context} <> {response}'))
     connection.receivedM105.connect(lambda id_, context, response: print(f'Received M105 ({id_}): {context} <> {response}'))
     connection.receivedM114.connect(lambda id_, context, response: print(f'Received M114 ({id_}): {context} <> {response}'))
+    connection.receivedM118.connect(lambda id_, context, response: print(f'Received M118 ({id_}): {context} <> {response}'))
     connection.receivedM140.connect(lambda id_, context, response: print(f'Received M140 ({id_}): {context} <> {response}'))
     connection.receivedM400.connect(lambda id_, context, response: print(f'Received M400 ({id_}): {context} <> {response}'))
     connection.receivedM851.connect(lambda id_, context, response: print(f'Received M851 ({id_}): {context} <> {response}'))
 
     connection.open('COM4')
 
-    connection.sendG28('0')
+    #connection.sendG28('0')
     #connection.sendG0('1', z=5.2)
     #connection.sendG30('2', x=37.5, y=37.5)
     #connection.sendM104('3', s=2)
@@ -260,6 +267,7 @@ if __name__ == '__main__':
     #connection.sendG0('t2', x=300, y=300)
     #connection.sendM400('t3')
     #connection.sendM114('t4', context={'a': 2})
+    connection.sendM118('M118_Test', string='Steve    ')
 
     widget = QtWidgets.QWidget()
     widget.show()
