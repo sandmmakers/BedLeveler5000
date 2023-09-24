@@ -36,7 +36,7 @@ class StatusBar(QtWidgets.QStatusBar):
         self.bedTempWidget.setToolTip('Current bed temperature')
         self.addPermanentWidget(self.bedTempWidget)
 
-        self.nozzleTempWidget = self.TempWidget('Noz: ')
+        self.nozzleTempWidget = self.TempWidget('Noz')
         self.nozzleTempWidget.setToolTip('Current nozzle temperature')
         self.addPermanentWidget(self.nozzleTempWidget)
 
