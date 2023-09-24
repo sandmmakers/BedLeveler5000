@@ -478,8 +478,7 @@ if __name__ == '__main__':
         pass
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(prog=QtCore.QCoreApplication.applicationName,
-                                     description='Utility for bed leveling')
+    parser = argparse.ArgumentParser(description='Utility for bed leveling')
     parser.add_argument('-v', '--version', action='version', version=QtCore.QCoreApplication.applicationVersion())
     parser.add_argument('--printers-dir', default=BASE_DIR / 'Printers', type=pathlib.Path, help='printer configuration directory')
     parser.add_argument('--printer', default=None, help='printer to use')
