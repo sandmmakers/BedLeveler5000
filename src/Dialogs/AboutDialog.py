@@ -65,8 +65,8 @@ if __name__ == '__main__':
     import sys
 
     app = QtWidgets.QApplication(sys.argv)
-    QtCore.QCoreApplication.setApplicationName('Bed Leveler 5000')
-    QtCore.QCoreApplication.setApplicationVersion('0.1')
+    QtCore.QCoreApplication.setApplicationName('AboutDialog TestApp')
+    QtCore.QCoreApplication.setApplicationVersion('1.0')
 
     def test():
         dialog = AboutDialog()
