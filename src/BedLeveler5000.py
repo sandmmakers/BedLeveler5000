@@ -469,7 +469,7 @@ if __name__ == '__main__':
     app.setWindowIcon(QtGui.QIcon((BASE_DIR / 'Resources' / 'Icon-128x128.png').as_posix()))
 
     QtCore.QCoreApplication.setApplicationName('Bed Leveler 5000')
-    QtCore.QCoreApplication.setApplicationVersion('0.1.2')
+    QtCore.QCoreApplication.setApplicationVersion('0.1.3')
 
     # Windows only, configure icon settings
     try:
