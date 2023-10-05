@@ -368,10 +368,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.homeButton.setEnabled(self.connection.connected())
 
     def enumeratePorts(self):
+        current = self.portComboBox.currentText()
         self.portComboBox.clear()
         serialPortInfoList = QtSerialPort.QSerialPortInfo.availablePorts()
         for serialPortInfo in serialPortInfoList:
             self.portComboBox.addItem(serialPortInfo.portName())
+        self.portComboBox.setCurrentText(current)
+
 
     def _openSerialPort(self, portName):
         try:
