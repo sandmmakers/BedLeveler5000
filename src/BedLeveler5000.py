@@ -352,6 +352,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.printerComboBox.setEnabled(not self.connection.connected())
         self.portComboBox.setEnabled(not self.connection.connected())
+        self.enumeratePortsAction.setEnabled(not self.connection.connected())
 
         self.temperatureControlsWidget.setEnabled(self.connection.connected())
         self.manualWidget.setEnabled(self.connection.connected())
