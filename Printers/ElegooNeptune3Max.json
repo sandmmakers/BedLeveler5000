@@ -1,56 +1,64 @@
 {
     "displayName": "Neptune 3 Max",
-    "mesh": {"columnCount": 7,
-             "rowCount": 9
+    "connection": {
+                      "baudRate": "Baud115200",
+                      "dataBits": "Data8",
+                      "parity": "NoParity",
+                      "stopBits": "OneStop",
+                      "flowControl": "NoFlowControl"
+                  },
+    "mesh": {
+                "columnCount": 7,
+                "rowCount": 9
             },
-	"manualProbePoints": [{
-			"name": "1",
-			"row": 2,
-			"column": 0,
-			"x": 37.5,
-			"y": 37.5
-		},
-		{
-			"name": "2",
-			"row": 1,
-			"column": 0,
-			"x": 37.5,
-			"y": 215
-		},
-		{
-			"name": "3",
-			"row": 0,
-			"column": 0,
-			"x": 37.5,
-			"y": 392.5
-		},
-		{
-			"name": "4",
-			"row": 0,
-			"column": 2,
-			"x": 392.5,
-			"y": 392.5
-		},
-		{
-			"name": "5",
-			"row": 1,
-			"column": 2,
-			"x": 392.5,
-			"y": 215
-		},
-		{
-			"name": "6",
-			"row": 2,
-			"column": 2,
-			"x": 392.5,
-			"y": 37.5
-		},
-		{
-			"name": "H",
-			"row": 1,
-			"column": 1,
-			"x": 243.5,
-			"y": 193
-		}
-	]
+    "manualProbePoints": [{
+                              "name": "1",
+                              "row": 2,
+                              "column": 0,
+                              "x": 37.5,
+                              "y": 37.5
+                          },
+                          {
+                              "name": "2",
+                              "row": 1,
+                              "column": 0,
+                              "x": 37.5,
+                              "y": 215
+                          },
+                          {
+                              "name": "3",
+                              "row": 0,
+                              "column": 0,
+                              "x": 37.5,
+                              "y": 392.5
+                          },
+                          {
+                              "name": "4",
+                              "row": 0,
+                              "column": 2,
+                              "x": 392.5,
+                              "y": 392.5
+                          },
+                          {
+                              "name": "5",
+                              "row": 1,
+                              "column": 2,
+                              "x": 392.5,
+                              "y": 215
+                          },
+                          {
+                              "name": "6",
+                              "row": 2,
+                              "column": 2,
+                              "x": 392.5,
+                              "y": 37.5
+                          },
+                          {
+                              "name": "H",
+                              "row": 1,
+                              "column": 1,
+                              "x": 243.5,
+                              "y": 193
+                          }
+                         ]
 }

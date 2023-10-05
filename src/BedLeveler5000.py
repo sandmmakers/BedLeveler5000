@@ -96,6 +96,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for filePath in self.printersDir.glob('**/*.json'):
             with open(filePath, 'r') as file:
                 printerInfo = json.load(file)
+                printerInfo['filePath'] = filePath
                 self.printerComboBox.addItem(printerInfo['displayName'], printerInfo)
 
         if self.printerComboBox.count() <= 0:
@@ -114,10 +115,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.switchPrinter()
 
     def switchPrinter(self):
-        self.printerInfo = self.printerComboBox.currentData()
-        self.manualWidget.setPrinter(self.printerInfo)
-        self.meshWidget.resizeMesh(self.printerInfo['mesh']['rowCount'],
-                                   self.printerInfo['mesh']['columnCount'])
+        try:
+            self.printerInfo = self.printerComboBox.currentData()
+            self.connection.setPrinter(self.printerInfo)
+            self.manualWidget.setPrinter(self.printerInfo)
+            self.meshWidget.resizeMesh(self.printerInfo['mesh']['rowCount'],
+                                       self.printerInfo['mesh']['columnCount'])
+        except ValueError as valueError:
+            self._fatalError(valueError.args[0])
 
     def _createWidgets(self):
         # Connection widgets

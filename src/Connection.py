@@ -64,6 +64,29 @@ class Connection(QtCore.QObject):
         self.signalMap[CommandM400.NAME] = self.receivedM400
         self.signalMap[CommandM851.NAME] = self.receivedM851
 
+    @staticmethod
+    def _getSerialPortEnumValue(cls, key):
+        index = QtSerialPort.QSerialPort.staticMetaObject.indexOfEnumerator(cls.__name__)
+        metaEnum = QtSerialPort.QSerialPort.staticMetaObject.enumerator(index)
+        value = metaEnum.keyToValue(key)[0]
+        if value == -1:
+            raise ValueError(f'\'{key}\' is not a valid value for \'{cls.__name__}\'')
+        return cls(value)
+
+    def setPrinter(self, printerInfo = None):
+        assert(not self.serialPort.isOpen())
+
+        try:
+            self.serialPort.setBaudRate(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.BaudRate, printerInfo['connection']['baudRate']))
+            self.serialPort.setDataBits(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.DataBits, printerInfo['connection']['dataBits']))
+            self.serialPort.setParity(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.Parity, printerInfo['connection']['parity']))
+            self.serialPort.setStopBits(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.StopBits, printerInfo['connection']['stopBits']))
+            self.serialPort.setFlowControl(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.FlowControl, printerInfo['connection']['flowControl']))
+        except ValueError as valueError:
+            message = f'In \'{printerInfo["filePath"]}\':\n' + valueError.args[0] + '.'
+            self.logger.error(message)
+            raise ValueError(message)
+
     def _handleSerialPortError(self, errorCode):
         match errorCode:
             case QtSerialPort.QSerialPort.SerialPortError.NoError:
@@ -102,18 +125,7 @@ class Connection(QtCore.QObject):
     def open(self, portName, *, clear=True):
         assert(not self.serialPort.isOpen())
 
-        baudRate = QtSerialPort.QSerialPort.Baud115200
-        dataBits = QtSerialPort.QSerialPort.Data8
-        parity = QtSerialPort.QSerialPort.NoParity
-        stopBits = QtSerialPort.QSerialPort.OneStop
-        flowControl = QtSerialPort.QSerialPort.NoFlowControl
-
         self.serialPort.setPortName(portName)
-        self.serialPort.setBaudRate(baudRate)
-        self.serialPort.setDataBits(dataBits)
-        self.serialPort.setParity(parity)
-        self.serialPort.setStopBits(stopBits)
-        self.serialPort.setFlowControl(flowControl)
 
         if not self.serialPort.open(QtCore.QIODevice.ReadWrite):
             self._error(f'Failed to open {portName}.')
@@ -124,10 +136,9 @@ class Connection(QtCore.QObject):
         self.logger.info(f'Opened {self.serialPort.portName()}')
 
     def close(self):
-        assert(self.serialPort.isOpen())
-
-        self.serialPort.close()
-        self.logger.info(f'Closed {self.serialPort.portName()}')
+        if self.serialPort.isOpen():
+            self.serialPort.close()
+            self.logger.info(f'Closed {self.serialPort.portName()}')
 
     def _readData(self):
         self.readBuffer += self.serialPort.readAll()
