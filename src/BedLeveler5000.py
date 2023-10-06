@@ -13,6 +13,7 @@ from Dialogs.AboutDialog import AboutDialog
 from Dialogs.WarningDialog import WarningDialog
 from Dialogs.ErrorDialog import ErrorDialog
 from Dialogs.FatalErrorDialog import FatalErrorDialog
+import Version
 from PySide6 import QtCore
 from PySide6 import QtGui
 from PySide6 import QtWidgets
@@ -458,7 +459,7 @@ if __name__ == '__main__':
     app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'Icon-128x128.png').as_posix()))
 
     QtCore.QCoreApplication.setApplicationName('Bed Leveler 5000')
-    QtCore.QCoreApplication.setApplicationVersion('0.1.3')
+    QtCore.QCoreApplication.setApplicationVersion(Version.version())
 
     # Windows only, configure icon settings
     try:
