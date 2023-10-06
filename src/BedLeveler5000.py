@@ -67,7 +67,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.portComboBox.setCurrentIndex(portIndex)
 
         self._updateState(self.State.DISCONNECTED)
-        self.show()
 
     def loadPrinters(self, desiredPrinter=None):
         self.printerComboBox.blockSignals(True)
@@ -489,4 +488,5 @@ if __name__ == '__main__':
         FatalErrorDialog(None, f'Failed to find printer directory: {args.printers_dir}.')
 
     mainWindow = MainWindow(printersDir=args.printers_dir, printer=args.printer, port=args.port)
+    mainWindow.show()
     app.exec()
