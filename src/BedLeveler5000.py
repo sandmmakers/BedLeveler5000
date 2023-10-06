@@ -192,7 +192,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         'initializingMesh': NoButtonStatusDialog(text='Initializing mesh.'),
                         'manualProbe': ManualProbeDialog(),
                         'updatingMesh': NoButtonStatusDialog(text='Updating mesh.'),
-                        'about': AboutDialog()}
+                        'about': AboutDialog('A utility aiding in FDM printer bed leveling.')}
 
     def _createTimers(self):
         self.temperatureJobPending = False

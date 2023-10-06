@@ -5,7 +5,7 @@ from PySide6 import QtGui
 from PySide6 import QtWidgets
 
 class AboutDialog(QtWidgets.QDialog):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, description, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle('About')
@@ -30,7 +30,7 @@ class AboutDialog(QtWidgets.QDialog):
         self.titleLabel.setPixmap(applicationNamePixmap)
 
         url = 'sandmmakers.com/projects/BedLeveler5000'
-        self.textLabel = QtWidgets.QLabel('A utility aiding in FDM printer bed leveling.<br>' \
+        self.textLabel = QtWidgets.QLabel(f'{description}<br>' \
                                           '<br><br>' \
                                           'By: <b>S&M Makers, LLC</b><br>' \
                                           f'<a href=\'{url}\'>{url}</a><br>' \
