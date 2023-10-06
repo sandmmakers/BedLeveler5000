@@ -370,7 +370,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.requestZProbeOffsets()
 
         except IOError as exception:
-            print(f'Error: {exception}')
+            self._error(exception.args[1])
 
         self._updateState()
 
