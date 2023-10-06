@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from Connection import Connection
+from CommandConnection import CommandConnection
 import Common
 from ManualWidget import ManualWidget
 from MeshWidget import MeshWidget
@@ -46,7 +46,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle(QtCore.QCoreApplication.applicationName())
         self.logger = logging.getLogger(QtCore.QCoreApplication.applicationName())
 
-        self.connection = Connection(commonSignal=True)
+        self.connection = CommandConnection(commonSignal=True)
         self.connection.received.connect(self._processResponse)
 
         self._createWidgets()
