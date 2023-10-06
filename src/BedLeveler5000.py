@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from Connection import Connection
+import Common
 from ManualWidget import ManualWidget
 from MeshWidget import MeshWidget
 from TemperatureControlsWidget import TemperatureControlsWidget
@@ -26,26 +27,6 @@ import pathlib
 import sys
 
 Point2D = namedtuple('Point2D', ['x', 'y'])
-
-# Determine the effective base directory
-BASE_DIR = pathlib.Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else pathlib.Path(__file__).parent.parent
-
-def configureLogging(level=None, console=False, file=None):
-    LOGGING_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-
-    logger = logging.getLogger()
-    logger.setLevel(99 if level is None else getattr(logging, level.upper()))
-    formatter = logging.Formatter(LOGGING_FORMAT)
-
-    consoleHandler = logging.StreamHandler()
-    consoleHandler.setLevel(logger.level if console else 99)
-    consoleHandler.setFormatter(formatter)
-    logger.addHandler(consoleHandler)
-
-    if file is not None:
-        fileHandler = logging.FileHandler(file)
-        fileHandler.setFormatter(formatter)
-        logger.addHandler(fileHandler)
 
 class MainWindow(QtWidgets.QMainWindow):
     class State(StrEnum):
@@ -475,7 +456,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon((BASE_DIR / 'Resources' / 'Icon-128x128.png').as_posix()))
+    app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'Icon-128x128.png').as_posix()))
 
     QtCore.QCoreApplication.setApplicationName('Bed Leveler 5000')
     QtCore.QCoreApplication.setApplicationVersion('0.1.3')
@@ -491,7 +472,7 @@ if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Utility for bed leveling')
     parser.add_argument('-v', '--version', action='version', version=QtCore.QCoreApplication.applicationVersion())
-    parser.add_argument('--printers-dir', default=BASE_DIR / 'Printers', type=pathlib.Path, help='printer configuration directory')
+    parser.add_argument('--printers-dir', default=Common.baseDir() / 'Printers', type=pathlib.Path, help='printer configuration directory')
     parser.add_argument('--printer', default=None, help='printer to use')
     parser.add_argument('--port', default=None, help='port to use')
     parser.add_argument('--log_level', choices=['debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
@@ -501,7 +482,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Configure logging
-    configureLogging(level=args.log_level, console=args.log_console, file=args.log_file)
+    Common.configureLogging(level=args.log_level, console=args.log_console, file=args.log_file)
 
     # Verify the printers directory exists
     if args.printers_dir is not None and not args.printers_dir.exists():
