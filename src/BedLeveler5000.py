@@ -4,6 +4,7 @@ from CommandConnection import CommandConnection
 import Common
 from ManualWidget import ManualWidget
 from MeshWidget import MeshWidget
+import PrinterInfo
 from TemperatureControlsWidget import TemperatureControlsWidget
 from StatusBar import StatusBar
 from Dialogs.HomingDialog import HomingDialog
@@ -74,10 +75,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.printerComboBox.clear()
 
         for filePath in self.printersDir.glob('**/*.json'):
-            with open(filePath, 'r') as file:
-                printerInfo = json.load(file)
-                printerInfo['filePath'] = filePath
-                self.printerComboBox.addItem(printerInfo['displayName'], printerInfo)
+            printerInfo = PrinterInfo.PrinterInfo.fromFile(filePath)
+            self.printerComboBox.addItem(printerInfo.displayName, printerInfo)
 
         if self.printerComboBox.count() <= 0:
             self._fatalError('No printers found.')
@@ -99,8 +98,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.printerInfo = self.printerComboBox.currentData()
             self.connection.setPrinter(self.printerInfo)
             self.manualWidget.setPrinter(self.printerInfo)
-            self.meshWidget.resizeMesh(self.printerInfo['mesh']['rowCount'],
-                                       self.printerInfo['mesh']['columnCount'])
+            self.meshWidget.resizeMesh(self.printerInfo.mesh.rowCount,
+                                       self.printerInfo.mesh.columnCount)
         except ValueError as valueError:
             self._fatalError(valueError.args[0])
 
@@ -244,8 +243,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
                     elif id_ == 'initMesh-waitForMeshFrontLeftCoordinate':
                         self.connection.sendG42('initMesh-moveToMeshBackRightCoordinate', f = 3000,
-                                                                                 i = self.printerInfo['mesh']['columnCount'] - 1,
-                                                                                 j = self.printerInfo['mesh']['rowCount'] - 1)
+                                                                                 i = self.printerInfo.mesh.columnCount - 1,
+                                                                                 j = self.printerInfo.mesh.rowCount - 1)
 
                     elif id_ == 'initMesh-moveToMeshBackRightCoordinate':
                         self.connection.sendM400('initMesh-waitForMeshBackRightCoordinate')
@@ -261,9 +260,9 @@ class MainWindow(QtWidgets.QMainWindow):
                         yBase = self.rawMeshFrontLeftCoordinate.y
                         xStep = (self.rawMeshBackRightCoordinate.x - self.rawMeshFrontLeftCoordinate.x) / (len(self.meshCoordinates[0]) - 1)
                         yStep = (self.rawMeshBackRightCoordinate.y - self.rawMeshFrontLeftCoordinate.y) / (len(self.meshCoordinates) - 1)
-                        for row in range(self.printerInfo['mesh']['rowCount']):
+                        for row in range(self.printerInfo.mesh.rowCount):
                             y = yBase + row*yStep
-                            for column in range(self.printerInfo['mesh']['columnCount']):
+                            for column in range(self.printerInfo.mesh.columnCount):
                                 self.meshCoordinates[row][column] = Point2D(x = xBase + column*xStep,
                                                                             y = y)
 
@@ -402,7 +401,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def initMesh(self):
         self.rawMeshFrontLeftCoordinate = None
         self.rawMeshBackRightCoordinate = None
-        self.meshCoordinates = [[None for column in range(self.printerInfo['mesh']['columnCount'])] for row in range(self.printerInfo['mesh']['rowCount'])]
+        self.meshCoordinates = [[None for column in range(self.printerInfo.mesh.columnCount)] for row in range(self.printerInfo.mesh.rowCount)]
 
         self.connection.sendG0('initMesh-RaiseZ', z=3)
 
@@ -471,7 +470,7 @@ if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Utility for bed leveling')
     parser.add_argument('-v', '--version', action='version', version=QtCore.QCoreApplication.applicationVersion())
-    parser.add_argument('--printers-dir', default=Common.baseDir() / 'Printers', type=pathlib.Path, help='printer configuration directory')
+    parser.add_argument('--printers-dir', default=Common.baseDir() / 'Printers', type=pathlib.Path, help='printer information directory')
     parser.add_argument('--printer', default=None, help='printer to use')
     parser.add_argument('--port', default=None, help='port to use')
     parser.add_argument('--log_level', choices=['debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')

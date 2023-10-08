@@ -10,7 +10,7 @@ class ManualProbeButtonArea(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def configure(self, description):
+    def configure(self, printerInfo):
         if self.centralWidget() is not None:
             self.centralWidget().deleteLater()
 
@@ -20,11 +20,11 @@ class ManualProbeButtonArea(QtWidgets.QMainWindow):
         self.setLayout(layout)
 
         # Create buttons
-        for details in description:
-            button = QtWidgets.QPushButton(details['name'])
-            point = QtCore.QPointF(details['x'], details['y'])
-            button.clicked.connect(lambda name=details['name'], x=point.x(), y=point.y(): self.probe.emit(name, x, y))
-            layout.addWidget(button, details['row'], details['column'])
+        for details in printerInfo.manualProbePoints:
+            button = QtWidgets.QPushButton(details.name)
+            point = QtCore.QPointF(details.x, details.y)
+            button.clicked.connect(lambda name=details.name, x=point.x(), y=point.y(): self.probe.emit(name, x, y))
+            layout.addWidget(button, details.row, details.column)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
@@ -32,25 +32,23 @@ class ManualProbeButtonArea(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     # Main only imports
+    from PrinterInfo import PrinterInfo
     import sys
-    import json
 
     # Read in the test printer descriptions
-    with open('Printers/TestPrinter.json', 'r') as file:
-        printer1 = json.load(file)
-    with open('Printers/ElegooNeptune3Max.json', 'r') as file:
-        printer2 = json.load(file)
+    printer1 = PrinterInfo.fromFile('Printers/ElegooNeptune3Plus.json')
+    printer2 = PrinterInfo.fromFile('Printers/ElegooNeptune3Max.json')
 
     app = QtWidgets.QApplication(sys.argv)
     widget = QtWidgets.QWidget()
 
     def update():
-        print(printerComboBox.currentData()['manualProbePoints'])
-        manualProbeButtonArea.configure(printerComboBox.currentData()['manualProbePoints'])
+        print(printerComboBox.currentData().manualProbePoints)
+        manualProbeButtonArea.configure(printerComboBox.currentData())
 
     printerComboBox = QtWidgets.QComboBox()
-    printerComboBox.addItem(printer1['displayName'], printer1)
-    printerComboBox.addItem(printer2['displayName'], printer2)
+    printerComboBox.addItem(printer1.displayName, printer1)
+    printerComboBox.addItem(printer2.displayName, printer2)
     printerComboBox.currentIndexChanged.connect(lambda : update())
 
     # Create test ManualProbeButtonArea

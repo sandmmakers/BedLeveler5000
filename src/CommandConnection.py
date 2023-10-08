@@ -133,20 +133,16 @@ class CommandConnection(Connection):
 
 if __name__ == '__main__':
     # Main only imports
-    import sys
+    from PrinterInfo import PrinterInfo
     from PySide6 import QtCore
     from PySide6 import QtWidgets
+    import sys
 
     app = QtWidgets.QApplication(sys.argv)
 
-    connection = CommandConnection(commonSignal=True, separateSignals=True)
-    connection.setPrinter({"connection": {
-                                             "baudRate": "Baud115200",
-                                             "dataBits": "Data8",
-                                             "parity": "NoParity",
-                                             "stopBits": "OneStop",
-                                             "flowControl": "NoFlowControl"
-                                         }})
+    connection = CommandConnection(commonSignal=True,
+                                   separateSignals=True,
+                                   printerInfo = PrinterInfo())
     connection.received.connect(lambda type_, id_, context, response: print(f'Received common {type_} ({id_}): {context} <> {response}'))
     connection.receivedG0.connect(lambda id_, context, response: print(f'Received G0 ({id_}): {context} <> {response}'))
     connection.receivedG28.connect(lambda id_, context, response: print(f'Received G28 ({id_}): {context} <> {response}'))

@@ -1,11 +1,12 @@
 {
     "displayName": "Neptune 3 Plus",
     "connection": {
-                      "baudRate": "Baud115200",
-                      "dataBits": "Data8",
-                      "parity": "NoParity",
-                      "stopBits": "OneStop",
-                      "flowControl": "NoFlowControl"
+                      "gCodeFlavor": "Marlin 2",
+                      "baudRate": "115200",
+                      "dataBits": "8",
+                      "parity": "No",
+                      "stopBits": "1",
+                      "flowControl": "No"
                   },
     "mesh": {
                 "columnCount": 7,
@@ -51,7 +52,7 @@
                               "row": 2,
                               "column": 2,
                               "x": 292.5,
-                                  "y": 32.5
+                              "y": 32.5
                           },
                           {
                               "name": "H",

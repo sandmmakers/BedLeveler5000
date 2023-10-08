@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+from PrinterInfo import PrinterInfo
 from PySide6 import QtCore
 from PySide6 import QtSerialPort
 import logging
 import math
 
 class Connection(QtCore.QObject):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, printerInfo=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Get logger
@@ -19,28 +20,17 @@ class Connection(QtCore.QObject):
 
         self.readBuffer = b''
 
-    @staticmethod
-    def _getSerialPortEnumValue(cls, key):
-        index = QtSerialPort.QSerialPort.staticMetaObject.indexOfEnumerator(cls.__name__)
-        metaEnum = QtSerialPort.QSerialPort.staticMetaObject.enumerator(index)
-        value = metaEnum.keyToValue(key)[0]
-        if value == -1:
-            raise ValueError(f'\'{key}\' is not a valid value for \'{cls.__name__}\'')
-        return cls(value)
+        if printerInfo is not None:
+            self.setPrinter(printerInfo)
 
-    def setPrinter(self, printerInfo = None):
+    def setPrinter(self, printerInfo):
         assert(not self.serialPort.isOpen())
 
-        try:
-            self.serialPort.setBaudRate(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.BaudRate, printerInfo['connection']['baudRate']))
-            self.serialPort.setDataBits(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.DataBits, printerInfo['connection']['dataBits']))
-            self.serialPort.setParity(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.Parity, printerInfo['connection']['parity']))
-            self.serialPort.setStopBits(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.StopBits, printerInfo['connection']['stopBits']))
-            self.serialPort.setFlowControl(self._getSerialPortEnumValue(QtSerialPort.QSerialPort.FlowControl, printerInfo['connection']['flowControl']))
-        except ValueError as valueError:
-            message = f'In \'{printerInfo["filePath"]}\':\n' + valueError.args[0] + '.'
-            self.logger.error(message)
-            raise ValueError(message)
+        self.serialPort.setBaudRate(printerInfo.connection.baudRate)
+        self.serialPort.setDataBits(printerInfo.connection.dataBits)
+        self.serialPort.setParity(printerInfo.connection.parity)
+        self.serialPort.setStopBits(printerInfo.connection.stopBits)
+        self.serialPort.setFlowControl(printerInfo.connection.flowControl)
 
     def _handleSerialPortError(self, errorCode):
         match errorCode:
@@ -147,14 +137,8 @@ if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG)
     logger = logging.getLogger()
 
-    connection = TestConnection()
-    connection.setPrinter({"connection": {
-                                             "baudRate": "Baud115200",
-                                             "dataBits": "Data8",
-                                             "parity": "NoParity",
-                                             "stopBits": "OneStop",
-                                             "flowControl": "NoFlowControl"
-                                         }})
+    connection = TestConnection(printerInfo = PrinterInfo())
+
     connection.open('COM4')
 
     connection.sendCommand('M114')

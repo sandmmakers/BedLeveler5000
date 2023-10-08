@@ -43,7 +43,7 @@ class ManualWidget(QtWidgets.QWidget):
         self.log.append(f'Probed {id_} ({response["bed"]["x"]}, {response["bed"]["y"]}): {response["bed"]["z"]} ({response["position"]["z"]})')
 
     def setPrinter(self, printer):
-        self.manualProbeButtonArea.configure(printer['manualProbePoints'])
+        self.manualProbeButtonArea.configure(printer)
 
 if __name__ == '__main__':
     # Main only imports
