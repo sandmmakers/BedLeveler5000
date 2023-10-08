@@ -13,6 +13,7 @@ from Dialogs.AboutDialog import AboutDialog
 from Dialogs.WarningDialog import WarningDialog
 from Dialogs.ErrorDialog import ErrorDialog
 from Dialogs.FatalErrorDialog import FatalErrorDialog
+from PortComboBox import PortComboBox
 import Version
 from PySide6 import QtCore
 from PySide6 import QtGui
@@ -59,13 +60,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.printersDir = printersDir
         self.loadPrinters(printer)
 
-        self.enumeratePorts()
         if port is not None:
-            portIndex = self.portComboBox.findText(port)
-            if portIndex == -1:
-                self._warning('Failed to find requested port.')
-            else:
-                self.portComboBox.setCurrentIndex(portIndex)
+            try:
+                self.portCombBox.setPort(port)
+            except ValueError as exception:
+                self._warning(exception)
 
         self._updateState(self.State.DISCONNECTED)
 
@@ -110,7 +109,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.printerComboBox = QtWidgets.QComboBox()
         self.printerComboBox.currentIndexChanged.connect(self.switchPrinter)
 
-        self.portComboBox = QtWidgets.QComboBox()
+        self.portComboBox = PortComboBox()
         self.connectButton = QtWidgets.QPushButton()
         self.homeButton = QtWidgets.QPushButton('Home')
         self.homeButton.clicked.connect(lambda : self.home(False))
