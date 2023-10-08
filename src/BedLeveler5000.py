@@ -306,7 +306,6 @@ class MainWindow(QtWidgets.QMainWindow):
                         # Probe the next coordinate
                         context['column'] += 1
                         if context['column'] >= len(self.meshCoordinates[0]):
-                            print(f'row done {context["row"]}{context["column"]}')
                             context['column'] = 0
                             context['row'] += 1
                             if context['row'] >= len(self.meshCoordinates):
@@ -354,7 +353,6 @@ class MainWindow(QtWidgets.QMainWindow):
         for serialPortInfo in serialPortInfoList:
             self.portComboBox.addItem(serialPortInfo.portName())
         self.portComboBox.setCurrentText(current)
-
 
     def _openSerialPort(self, portName):
         try:
