@@ -21,7 +21,7 @@ class CommandM118(CommandBase):
                 raise ValueError(f'pn must be an integer between 0 and 9 (inclusive).')
             pnPart = f' Pn{pn}'
 
-        stringPart = '' if string is None else string
+        stringPart = '' if string is None else ' ' + string
 
         super().__init__(id_,
                          self.NAME + a1Part + e1Part + pnPart + stringPart,
