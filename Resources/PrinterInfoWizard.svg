@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+    xmlns:cc="http://creativecommons.org/ns#"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:svg="http://www.w3.org/2000/svg"
+    xmlns:ns1="http://sozi.baierouge.fr"
+    id="svg2"
+    sodipodi:docname="papapishu_Wizard_in_blue_hat.svg"
+    inkscape:export-filename="D:\Documents and Settings\Joanna\My Documents\My Pictures\graph_vector\papapishu_wizard_1.png"
+    viewBox="0 0 205.61 193.9"
+    sodipodi:version="0.32"
+    inkscape:export-xdpi="152.02286"
+    version="1.0"
+    inkscape:output_extension="org.inkscape.output.svg.inkscape"
+    inkscape:export-ydpi="152.02286"
+    inkscape:version="0.46"
+    sodipodi:docbase="D:\Documents and Settings\Joanna\My Documents\My Pictures\graph_vector"
+  >
+  <defs
+      id="defs4"
+    >
+    <linearGradient
+        id="linearGradient2225"
+      >
+      <stop
+          id="stop2227"
+          style="stop-color:rgb(0, 0, 121)"
+          offset="0"
+      />
+      <stop
+          id="stop2282"
+          style="stop-color:rgb(0, 0, 121)"
+          offset="1"
+      />
+    </linearGradient
+    >
+    <linearGradient
+        id="linearGradient2422"
+        y2="535.71"
+        xlink:href="#linearGradient2225"
+        gradientUnits="userSpaceOnUse"
+        x2="695.65"
+        gradientTransform="matrix(.31234 0 0 .25489 -754.44 443.65)"
+        y1="505.89"
+        x1="101.58"
+        inkscape:collect="always"
+    />
+    <linearGradient
+        id="linearGradient2424"
+        y2="633.04"
+        gradientUnits="userSpaceOnUse"
+        x2="585.08"
+        gradientTransform="matrix(.31234 0 0 .18977 -754.44 492.38)"
+        y1="586.87"
+        x1="160.36"
+        inkscape:collect="always"
+      >
+      <stop
+          id="stop2215"
+          style="stop-color:rgb(0, 0, 0)"
+          offset="0"
+      />
+      <stop
+          id="stop2223"
+          style="stop-color:rgb(0, 0, 0)"
+          offset=".5"
+      />
+      <stop
+          id="stop2217"
+          style="stop-color:rgb(0, 0, 0)"
+          offset="1"
+      />
+    </linearGradient
+    >
+    <linearGradient
+        id="linearGradient2426"
+        y2="658.74"
+        xlink:href="#linearGradient2225"
+        gradientUnits="userSpaceOnUse"
+        x2="477.51"
+        gradientTransform="matrix(.31234 0 0 .36907 -754.84 368.47)"
+        y1="1015.8"
+        x1="431.39"
+        inkscape:collect="always"
+    />
+  </defs
+  >
+  <sodipodi:namedview
+      id="base"
+      bordercolor="#666666"
+      inkscape:pageshadow="2"
+      guidetolerance="10"
+      pagecolor="#ffffff"
+      gridtolerance="10000"
+      inkscape:window-height="821"
+      inkscape:zoom="1.9049386"
+      objecttolerance="10"
+      showgrid="false"
+      borderopacity="1.0"
+      inkscape:current-layer="layer1"
+      inkscape:cx="116.81485"
+      inkscape:cy="84.461517"
+      inkscape:window-y="25"
+      inkscape:window-x="0"
+      inkscape:window-width="1280"
+      inkscape:pageopacity="0.0"
+      inkscape:document-units="px"
+  />
+  <g
+      id="layer1"
+      inkscape:label="Layer 1"
+      inkscape:groupmode="layer"
+      transform="translate(741.3 -461.8)"
+    >
+    <g
+        id="g2411"
+      >
+      <path
+          id="path2183"
+          sodipodi:nodetypes="csscccc"
+          style="fill-rule:evenodd;stroke:#000000;stroke-width:2;fill:url(#linearGradient2422)"
+          d="m-700.02 622.52s35.1-116.67 68.34-150.35c13.84-14.02 30.89-9.12 35.68-5.55 13.87 10.31 18.98 25.17 26.49 37.73-22.01-5.32-14.63-15.61-38.86-13.48l14.39 132.23-106.04-0.58z"
+      />
+      <path
+          id="path2185"
+          sodipodi:nodetypes="ccccc"
+          style="fill-rule:evenodd;fill:url(#linearGradient2424)"
+          d="m-701.34 628.5l10.55-35.53c15.7-5.66 49.49-5.35 93.58 5.81l4.3 34.05-108.43-4.33z"
+      />
+      <path
+          id="path2187"
+          sodipodi:nodetypes="ccccccccccccccc"
+          style="fill-rule:evenodd;stroke:#000000;fill:#ffcd00"
+          d="m-632.8 620.66l0.33-30.74 3.11-1.36c10.58 0.18 19.2 1.81 25.85 4.87l3.76 29.58-3.76 1.62-29.29-3.97zm9.66-26.81l1.14 18.84 13.54 2.04-1.07-6.19-10.97-5.05 9.73-1.92-0.86-5.82c-3.84-1.74-7.67-2.08-11.51-1.9z"
+      />
+      <path
+          id="path2201"
+          style="fill-rule:evenodd;stroke:#000000;fill:#bc9500"
+          d="m-632.45 590.01l3.35-1.43 0.65 30.51-4.22 1.61 0.22-30.69z"
+      />
+      <path
+          id="path2203"
+          sodipodi:nodetypes="ccccccc"
+          style="fill-rule:evenodd;stroke:#000000;fill:#bc9500"
+          d="m-623.28 592.09l0.05 1.77c3.19-0.27 6.91-0.08 11.62 1.79l0.79 5.82 2.79-0.7-1.24-6.3c-5.32-2.42-9.7-2.67-14.01-2.38z"
+      />
+      <path
+          id="path2205"
+          sodipodi:nodetypes="cccccc"
+          style="fill-rule:evenodd;stroke:#000000;fill:#bc9500"
+          d="m-620.03 603.53l10.45 4.45 1.3 6.9 2.78 0.53-1.88-9.51-12.65-2.37z"
+      />
+      <path
+          id="path1308"
+          sodipodi:nodetypes="csscszsz"
+          style="fill-rule:evenodd;stroke:#000000;stroke-width:2;fill:#377cff"
+          d="m-701.36 640.34c31.03 3.14 68.81-1.9 117.9 1.37 13.51 0.9 30.69 1.03 44.03-9.14 2.38-1.81 6.28-7.04-4.05-8.68-2.88-1.04-2.87 5.28-29.23 1.92-34.21-4.36-68.59-16.23-98.08-18.64-29.5-2.41-54.36-2.55-66.18 10.97-10.53 12.03 4.58 19.06 35.61 22.2z"
+      />
+      <path
+          id="path2237"
+          sodipodi:nodetypes="ccccccccccc"
+          style="fill-rule:evenodd;stroke:#000000;stroke-width:2;fill:url(#linearGradient2426)"
+          d="m-702.86 612.35c-9.67 0.34-19.66 0.63-28.76 4.78-3.31 1.4-5.84 4.47-7.17 8.28-1.99 4.31-1.6 10.12 1.56 13.55 5.52 6.28 13.3 8.49 20.52 10.6 23.7 6.33 48.22 4.42 72.34 3.72 21.03-0.78 42.11-0.63 63.09 1.41 26.26-1.11 36.13-6.74 42.59-22.55-17.11 6.21-19.27 10.51-50.75 4.34-25.62-6.45-50.31-17.84-76.37-21.8-12.27-1.55-24.68-2.5-37.05-2.33z"
+      />
+      <path
+          id="path5447"
+          sodipodi:nodetypes="csc"
+          style="stroke:#000000;stroke-width:2;fill:none"
+          d="m-608.18 491.51c-1.24-3.43-2.7-6.9-1.35-8.76 1.75-2.41 5.96-3.4 4.04 2.98"
+      />
+    </g
+    >
+  </g
+  >
+  <g
+      id="layer2"
+      inkscape:label="wyz"
+      inkscape:groupmode="layer"
+      transform="translate(-13.833 -6.4624)"
+    >
+    <path
+        id="path2284"
+        style="fill:#ffffff"
+        d="m100.41 250.34c3.64-1.46 6.61-4.04 9.36-6.76 4.83 4.82 11.25 9.53 18.47 7.97 3.78-1.08 11.17-3.4 9.16-8.44-4.1-5.84-1.01-13.98-4.97-19.9-3.41-4.43-9.24-4.56-13.93-2.3-7.84 2.34-16.35 0.21-22.983-4.32-4.558-0.54-8.498 4.56-10.34 8.32-2.605 6.29-0.042 13.5-2.86 19.68-2.666 3.81 3.736 6.06 6.669 6.83 3.799 0.83 7.84 0.4 11.424-1.08z"
+    />
+  </g
+  >
+  <metadata
+    >
+    <rdf:RDF
+      >
+      <cc:Work
+        >
+        <dc:format
+          >image/svg+xml</dc:format
+        >
+        <dc:type
+            rdf:resource="http://purl.org/dc/dcmitype/StillImage"
+        />
+        <cc:license
+            rdf:resource="http://creativecommons.org/licenses/publicdomain/"
+        />
+        <dc:publisher
+          >
+          <cc:Agent
+              rdf:about="http://openclipart.org/"
+            >
+            <dc:title
+              >Openclipart</dc:title
+            >
+          </cc:Agent
+          >
+        </dc:publisher
+        >
+        <dc:title
+          >Wizard's Hat</dc:title
+        >
+        <dc:date
+          >2009-09-24T23:29:31</dc:date
+        >
+        <dc:description
+          >A blue hat, suitable for a wizard.</dc:description
+        >
+        <dc:source
+          >https://openclipart.org/detail/27526/wizards-hat-by-secretlondon</dc:source
+        >
+        <dc:creator
+          >
+          <cc:Agent
+            >
+            <dc:title
+              >secretlondon</dc:title
+            >
+          </cc:Agent
+          >
+        </dc:creator
+        >
+        <dc:subject
+          >
+          <rdf:Bag
+            >
+            <rdf:li
+              >blue</rdf:li
+            >
+            <rdf:li
+              >clothing</rdf:li
+            >
+            <rdf:li
+              >color</rdf:li
+            >
+            <rdf:li
+              >contour</rdf:li
+            >
+            <rdf:li
+              >hat</rdf:li
+            >
+            <rdf:li
+              >remix</rdf:li
+            >
+            <rdf:li
+              >wizard</rdf:li
+            >
+          </rdf:Bag
+          >
+        </dc:subject
+        >
+      </cc:Work
+      >
+      <cc:License
+          rdf:about="http://creativecommons.org/licenses/publicdomain/"
+        >
+        <cc:permits
+            rdf:resource="http://creativecommons.org/ns#Reproduction"
+        />
+        <cc:permits
+            rdf:resource="http://creativecommons.org/ns#Distribution"
+        />
+        <cc:permits
+            rdf:resource="http://creativecommons.org/ns#DerivativeWorks"
+        />
+      </cc:License
+      >
+    </rdf:RDF
+    >
+  </metadata
+  >
+</svg
+>

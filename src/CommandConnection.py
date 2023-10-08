@@ -17,6 +17,7 @@ import queue
 import math
 
 class CommandConnection(Connection):
+    error = QtCore.Signal(str) # TODO: Determine if name, id, and context can be added
     received = QtCore.Signal(str, str, dict, dict)
     receivedG0 = QtCore.Signal(str, dict, dict)
     receivedG28 = QtCore.Signal(str, dict, dict)
@@ -129,7 +130,8 @@ class CommandConnection(Connection):
 
     def _error(self, message):
         self.logger.error(message)
-        raise IOError(message)
+        self.error.emit(message)
+        #raise IOError(message) # TODO: Update/consolidate error handling
 
 if __name__ == '__main__':
     # Main only imports

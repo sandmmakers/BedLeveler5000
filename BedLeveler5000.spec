@@ -1,6 +1,6 @@
 block_cipher = None
 
-a = Analysis(
+BedLeveler5000_a = Analysis(
     ['src/BedLeveler5000.py'],
     pathex=[],
     binaries=[],
@@ -18,11 +18,11 @@ a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+BedLeveler5000_pyz = PYZ(BedLeveler5000_a.pure, BedLeveler5000_a.zipped_data, cipher=block_cipher)
 
-exe = EXE(
-    pyz,
-    a.scripts,
+BedLeveler5000_exe = EXE(
+    BedLeveler5000_pyz,
+    BedLeveler5000_a.scripts,
     [],
     exclude_binaries=True,
     name='BedLeveler5000',
@@ -38,11 +38,55 @@ exe = EXE(
     entitlements_file=None,
     icon='Resources/Icon-128x128.png'
 )
+
+PrinterInfoWizard_a = Analysis(
+    ['src/PrinterInfoWizard.py'],
+    pathex=[],
+    binaries=[],
+    datas=[('Printers', 'Printers'),
+           ('Resources', 'Resources'),
+           ('Third Party', 'Third Party'),
+           ('LICENSE', '.')],
+    hiddenimports=[],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+PrinterInfoWizard_pyz = PYZ(PrinterInfoWizard_a.pure, PrinterInfoWizard_a.zipped_data, cipher=block_cipher)
+
+PrinterInfoWizard_exe = EXE(
+    PrinterInfoWizard_pyz,
+    PrinterInfoWizard_a.scripts,
+    [],
+    exclude_binaries=True,
+    name='PrinterInfoWizard',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon='Resources/PrinterInfoWizard-128x128.png'
+)
+
 coll = COLLECT(
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
+    BedLeveler5000_exe,
+    BedLeveler5000_a.binaries,
+    BedLeveler5000_a.zipfiles,
+    BedLeveler5000_a.datas,
+    PrinterInfoWizard_exe,
+    PrinterInfoWizard_a.binaries,
+    PrinterInfoWizard_a.zipfiles,
+    PrinterInfoWizard_a.datas,
     strip=False,
     upx=True,
     upx_exclude=[],
