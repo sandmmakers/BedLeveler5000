@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from PySide6 import QtSerialPort
 from collections import OrderedDict
 import dataclasses

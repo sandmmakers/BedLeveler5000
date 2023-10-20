@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from Connection import Connection
 from PySide6 import QtCore

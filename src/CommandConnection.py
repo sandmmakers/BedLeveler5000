@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from Commands.CommandG0 import CommandG0
 from Commands.CommandG28 import CommandG28

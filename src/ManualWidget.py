@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from ManualProbeButtonArea import ManualProbeButtonArea
 from PySide6 import QtCore

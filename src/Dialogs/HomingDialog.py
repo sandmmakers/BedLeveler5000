@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from .NoButtonStatusDialog import NoButtonStatusDialog
 from PySide6 import QtCore

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from PrinterInfo import GridProbePoint
 from PySide6 import QtCore

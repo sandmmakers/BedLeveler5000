@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 from Mesh3DWidget import Mesh3DWidget
 from MeshNumberWidget import MeshNumberWidget
