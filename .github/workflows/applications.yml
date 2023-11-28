@@ -28,6 +28,12 @@ jobs:
     - name: Install python_appimage
       run: pip install python_appimage
 
+    - name: Install libfuse2
+      run: apt install libfuse2
+
+    - name: Install libfuse3
+      run: apt install libfuse3
+      
     - name: Test bedleveler5000
       if: ${{ inputs.bedleveler5000 && (matrix.version == '3.10' || matrix.version == '3.11' || matrix.version == '3.12') }}
       run: |
