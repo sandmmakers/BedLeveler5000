@@ -29,7 +29,10 @@ jobs:
         python-version: ${{ matrix.version }}
 
     - name: Install python_appimage
-      run: pip install python_appimage
+      run: pip3 install python_appimage
+
+    - name: apt update
+      run: sudo apt update
 
     - name: Install libfuse2
       run: sudo apt install libfuse2
