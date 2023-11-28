@@ -69,6 +69,7 @@ jobs:
       with:
         prerelease: true
         files: |
+          *.AppImage
           ./**/*.AppImage
           **/*/bedleveler5000-x86_64.AppImage
           */**/bedleveler5000-x86_64.AppImage
