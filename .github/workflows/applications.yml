@@ -63,5 +63,8 @@ jobs:
         prerelease: true
         files: |
           **/*/bedleveler5000-x86_64.AppImage
+          */**/bedleveler5000-x86_64.AppImage
+          ./*/bedleveler5000-x86_64.AppImage
+          ${{ matrix.asset }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
