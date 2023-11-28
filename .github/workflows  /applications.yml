@@ -1,0 +1,42 @@
+name: Applications
+on:
+  workflow_dispatch:
+    inputs:
+      bedleveler5000:
+        required: true
+        default: true
+        type: boolean
+      bedleveler5000-2:
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  Test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        version: ['3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.version }}
+
+    - name: Test bedleveler5000
+      if: ${{ inputs.bedleveler5000 && (matrix.version == '3.10') }}
+      run: |
+        python -m python_appimage build app python-appimage/bedleveler5000            \
+                                            --linux-tag=manylinux1_x86_64      \
+                                            --python-version=3.10
+        test -e bedleveler5000-x86_64.AppImage
+        ./bedleveler5000-x86_64.AppImage --help
+
+    - name: Test bedleveler5000-2
+      if: ${{ inputs.bedleveler5000-2 && (matrix.version == '3.10') }}
+      run: |
+        python -m python_appimage build app python-appimage/bedleveler5000            \
+                                            --python-version=3.11
+        test -e bedleveler5000-x86_64.AppImage
+        ./bedleveler5000-x86_64.AppImage --help
