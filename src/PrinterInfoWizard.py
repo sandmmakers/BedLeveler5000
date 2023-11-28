@@ -257,11 +257,18 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
             comboBox.setCurrentIndex(index)
 
         self.displayNameLineEdit.setText(printerInfo.displayName)
-        self.marlin2ConnectionWidget.setBaudRate(printerInfo.connection.baudRate)
-        self.marlin2ConnectionWidget.setDataBits(printerInfo.connection.dataBits)
-        self.marlin2ConnectionWidget.setParity(printerInfo.connection.parity)
-        self.marlin2ConnectionWidget.setStopBits(printerInfo.connection.stopBits)
-        self.marlin2ConnectionWidget.setFlowControl(printerInfo.connection.flowControl)
+
+        connectionModeIndex = self.connectionModeComboBox.findData(printerInfo.connectionMode)
+        if connectionModeIndex == -1:
+            raise ValueError('Detected an unsupported connection mode.')
+        self.connectionModeComboBox.setCurrentIndex(connectionModeIndex)
+
+        if printerInfo.connectionMode == ConnectionMode.MARLIN_2:
+            self.marlin2ConnectionWidget.setBaudRate(printerInfo.connection.baudRate)
+            self.marlin2ConnectionWidget.setDataBits(printerInfo.connection.dataBits)
+            self.marlin2ConnectionWidget.setParity(printerInfo.connection.parity)
+            self.marlin2ConnectionWidget.setStopBits(printerInfo.connection.stopBits)
+            self.marlin2ConnectionWidget.setFlowControl(printerInfo.connection.flowControl)
 
         self.grid.clear()
         for point in printerInfo.manualProbePoints:
