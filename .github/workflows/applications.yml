@@ -47,3 +47,12 @@ jobs:
                                             --python-version=3.10
         test -e bedleveler5000-x86_64.AppImage
         ./bedleveler5000-x86_64.AppImage --help
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          bedleveler5000-x86_64.AppImage
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
