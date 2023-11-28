@@ -48,10 +48,16 @@ jobs:
         test -e bedleveler5000-x86_64.AppImage
         ./bedleveler5000-x86_64.AppImage --help
 
+    - name: Build bedleveler5000
+      if: ${{ inputs.bedleveler5000 && (matrix.version == '3.10' || matrix.version == '3.11' || matrix.version == '3.12') }}
+      run: |
+        python -m python_appimage build app python-appimage/bedleveler5000            \
+                                            --python-version=3.11
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
+        prerelease: true
         files: |
           bedleveler5000-x86_64.AppImage
       env:
