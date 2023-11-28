@@ -34,8 +34,8 @@ jobs:
     - name: Install libfuse2
       run: sudo apt install libfuse2
 
-    - name: py -m venv venv
-      run: py -m venv venv
+    - name: python3 -m venv venv
+      run: python3 -m venv venv
 
     - name: source venv/Scripts/activate
       run: source venv/Scripts/activate
