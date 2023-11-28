@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-    <id>tasmotizer</id>
+    <id>bedleveler5000</id>
     <metadata_license>MIT</metadata_license>
     <project_license>Python-2.0</project_license>
     <name>bedleveler5000</name>
-    <summary>ESP... The time has come to... BedLeveler5000</summary>
+    <summary>BedLeveler5000</summary>
     <description>
         <p>  Python {{ python-fullversion }}  with PyQt5 and BedLeveler5000.py
              bundled in an AppImage.
