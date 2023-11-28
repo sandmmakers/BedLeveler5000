@@ -34,11 +34,14 @@ jobs:
     - name: Install libfuse2
       run: sudo apt install libfuse2
 
-    - name: python3 -m venv venv
-      run: python3 -m venv venv
+    - name: Install xorg libxkbcommon0
+      run: sudo apt install xorg libxkbcommon0
 
-    - name: source venv/Scripts/activate
-      run: source venv/Scripts/activate
+#    - name: python3 -m venv venv
+#      run: python3 -m venv venv
+
+#    - name: source venv/Scripts/activate
+#      run: source venv/Scripts/activate
 
     - name: pip3 install -r requirements.txt
       run: pip3 install -r requirements.txt
