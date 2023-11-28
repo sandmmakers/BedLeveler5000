@@ -62,6 +62,6 @@ jobs:
       with:
         prerelease: true
         files: |
-          bedleveler5000-x86_64.AppImage
+          **/*/bedleveler5000-x86_64.AppImage
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
