@@ -1,5 +1,8 @@
 name: Applications
 on:
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
     inputs:
       bedleveler5000:
