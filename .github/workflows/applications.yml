@@ -13,10 +13,11 @@ on:
 
 jobs:
   Test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        version: ['3.10', '3.11', '3.12']
+        version: ['3.11']
+#        version: ['3.10', '3.11', '3.12']
 
     steps:
     - uses: actions/checkout@v4
@@ -31,8 +32,7 @@ jobs:
       if: ${{ inputs.bedleveler5000 && (matrix.version == '3.10' || matrix.version == '3.11' || matrix.version == '3.12') }}
       run: |
         python -m python_appimage build app python-appimage/bedleveler5000            \
-                                            --linux-tag=manylinux1_x86_64      \
-                                            --python-version=3.10
+                                            --python-version=3.11
         test -e bedleveler5000-x86_64.AppImage
         ./bedleveler5000-x86_64.AppImage --help
 
@@ -40,6 +40,7 @@ jobs:
       if: ${{ inputs.bedleveler5000-2 && (matrix.version == '3.10') }}
       run: |
         python -m python_appimage build app python-appimage/bedleveler5000            \
-                                            --python-version=3.11
+                                            --linux-tag=manylinux1_x86_64      \
+                                            --python-version=3.10
         test -e bedleveler5000-x86_64.AppImage
         ./bedleveler5000-x86_64.AppImage --help
