@@ -117,6 +117,45 @@ Inspector_G_code_exe = EXE(
     icon='Resources/InspectorG-code_Icon_128x128.png'
 )
 
+PrinterTester_a = Analysis(
+    ['src/PrinterTester.py'],
+    pathex=[],
+    binaries=[],
+    datas=[('Printers', 'Printers'),
+           ('Resources', 'Resources'),
+           ('Third Party', 'Third Party'),
+           ('LICENSE', '.')],
+    hiddenimports=[],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+PrinterTester_pyz = PYZ(PrinterTester_a.pure, PrinterTester_a.zipped_data, cipher=block_cipher)
+
+PrinterTester_exe = EXE(
+    PrinterTester_pyz,
+    PrinterTester_a.scripts,
+    [],
+    exclude_binaries=True,
+    name='PrinterTester',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon='Resources/PrinterTester-128x128.png'
+)
+
 coll = COLLECT(
     BedLeveler5000_exe,
     BedLeveler5000_a.binaries,
@@ -130,6 +169,10 @@ coll = COLLECT(
     Inspector_G_code_a.binaries,
     Inspector_G_code_a.zipfiles,
     Inspector_G_code_a.datas,
+    PrinterTester_exe,
+    PrinterTester_a.binaries,
+    PrinterTester_a.zipfiles,
+    PrinterTester_a.datas,
     strip=False,
     upx=True,
     upx_exclude=[],

@@ -1,126 +1,90 @@
 #!/usr/bin/env python
 
-from CommandConnection import CommandConnection
-import Common
-from ManualWidget import ManualWidget
-from MeshWidget import MeshWidget
-import PrinterInfo
-from TemperatureControlsWidget import TemperatureControlsWidget
-from StatusBar import StatusBar
-from Dialogs.HomingDialog import HomingDialog
-from Dialogs.NoButtonStatusDialog import NoButtonStatusDialog
-from Dialogs.ManualProbeDialog import ManualProbeDialog
+from Common import Common
+from Widgets.BedLeveler5000.ManualWidget import ManualWidget
+from Widgets.BedLeveler5000.MeshWidget import MeshWidget
+from Common.PrinterInfo import ConnectionMode
+from Printers.Marlin2.Marlin2Printer import Marlin2Printer
+from Printers.Moonraker.MoonrakerPrinter import MoonrakerPrinter
+from Widgets.BedLeveler5000.TemperatureControlsWidget import TemperatureControlsWidget
+from Widgets.BedLeveler5000.StatusBar import StatusBar
+from Widgets.PrinterConnectWidget import PrinterConnectWidget
+from Dialogs.BedLeveler5000.CancellableStatusDialog import CancellableStatusDialog
 from Dialogs.AboutDialog import AboutDialog
 from Dialogs.WarningDialog import WarningDialog
 from Dialogs.ErrorDialog import ErrorDialog
 from Dialogs.FatalErrorDialog import FatalErrorDialog
-from PortComboBox import PortComboBox
-import Version
+from Common import Version
 from PySide6 import QtCore
 from PySide6 import QtGui
 from PySide6 import QtWidgets
 from PySide6 import QtSerialPort
 import argparse
-from collections import namedtuple
-from enum import IntEnum
 from enum import StrEnum
 import json
 import logging
 import pathlib
+import signal
 import sys
 
-Point2D = namedtuple('Point2D', ['x', 'y'])
+# Enable CTRL-C killing the application
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+DESCRIPTION = 'A utility aiding in FDM printer bed leveling.'
 
 class MainWindow(QtWidgets.QMainWindow):
     class State(StrEnum):
         DISCONNECTED = 'Disconnected'
-        GETTING_Z_PROBE_OFFSETS = 'Getting Z probe offsets'
-        INITIAL_HOMING = 'Initial homing'
+        INITIALIZING = 'Initializing'
         INITIALIZING_MESH = 'Initializing mesh'
         CONNECTED = 'Connected'
-        USER_HOMING = 'Homing'
+        HOMING = 'Homing'
         MANUAL_PROBE = 'Manually probing point'
         UPDATING_MESH = 'Updating mesh'
 
-    def __init__(self, *args, printersDir, printer=None, port=None, **kwargs):
+    class Dialog(StrEnum):
+        INITIALIZING = 'Initializing'
+        HOMING = 'Homing'
+        PROBE = 'Probe'
+
+    def __init__(self, *args, printersDir, printer=None, host=None, port=None, noTemperatureReporting=False, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle(QtCore.QCoreApplication.applicationName())
         self.logger = logging.getLogger(QtCore.QCoreApplication.applicationName())
 
-        self.connection = CommandConnection(commonSignal=True)
-        self.connection.received.connect(self._processResponse)
+        self.__createWidgets()
+        self.__layoutWidgets()
+        self.__createMenus()
+        self.__createStatusBar()
+        self.__createDialogs()
+        self.__createTimers()
 
-        self._createWidgets()
-        self._layoutWidgets()
-        self._createMenus()
-        self._createStatusBar()
-        self._createDialogs()
-        self._createTimers()
+        self.currentId = -1
+        self.printer = None
+        self.printerInfo = None
+        self.meshCoordinates = None
+        self.printerQtConnections = []
+        self.noTemperatureReporting = noTemperatureReporting
+        self.printerConnectWidget.loadPrinters(printersDir, desiredPrinter=printer, desiredHost=host, desiredPort=port)
+        self.updateState(self.State.DISCONNECTED)
 
-        self.printersDir = printersDir
-        self.loadPrinters(printer)
-
-        if port is not None:
-            try:
-                self.portCombBox.setPort(port)
-            except ValueError as exception:
-                self._warning(exception)
-
-        self._updateState(self.State.DISCONNECTED)
-
-    def loadPrinters(self, desiredPrinter=None):
-        self.printerComboBox.blockSignals(True)
-
-        self.printerComboBox.clear()
-
-        for filePath in self.printersDir.glob('**/*.json'):
-            printerInfo = PrinterInfo.PrinterInfo.fromFile(filePath)
-            self.printerComboBox.addItem(printerInfo.displayName, printerInfo)
-
-        if self.printerComboBox.count() <= 0:
-            self._fatalError('No printers found.')
-
-        self.printerComboBox.blockSignals(False)
-
-        index = 0 if desiredPrinter is None else self.printerComboBox.findText(desiredPrinter)
-        if index == -1:
-            self._warning('Failed to find requested printer.')
-        else:
-            self.printerComboBox.setCurrentIndex(index)
-
-        # Ensure switchPrinter always gets called
-        if index == 0:
-            self.switchPrinter()
-
-    def switchPrinter(self):
-        try:
-            self.printerInfo = self.printerComboBox.currentData()
-            self.connection.setPrinter(self.printerInfo)
-            self.manualWidget.setPrinter(self.printerInfo)
-            self.meshWidget.resizeMesh(self.printerInfo.mesh.rowCount,
-                                       self.printerInfo.mesh.columnCount)
-        except ValueError as valueError:
-            self._fatalError(valueError.args[0])
-
-    def _createWidgets(self):
-        # Connection widgets
-        self.printerComboBox = QtWidgets.QComboBox()
-        self.printerComboBox.currentIndexChanged.connect(self.switchPrinter)
-
-        self.portComboBox = PortComboBox()
-        self.connectButton = QtWidgets.QPushButton()
-        self.homeButton = QtWidgets.QPushButton('Home')
-        self.homeButton.clicked.connect(lambda : self.home(False))
+    def __createWidgets(self):
+        # Printer connect widget
+        self.printerConnectWidget = PrinterConnectWidget()
+        self.printerConnectWidget.printerChanged.connect(self.switchPrinter)
+        self.printerConnectWidget.connectRequested.connect(self.connectToPrinter)
+        self.printerConnectWidget.disconnectRequested.connect(self.disconnectFromPrinter)
+        self.printerConnectWidget.homeRequested.connect(self.home)
 
         # Temperature Controls Widget
         self.temperatureControlsWidget = TemperatureControlsWidget()
-        self.temperatureControlsWidget.bedHeaterChanged.connect(lambda state, temp: self.connection.sendM140('bedTemp', s=temp if state else 0))
-        self.temperatureControlsWidget.nozzleHeaterChanged.connect(lambda state, temp: self.connection.sendM104('nozzleTemp', s=temp if state else 0))
+        self.temperatureControlsWidget.bedHeaterChanged.connect(self.setBedTemperature)
+        self.temperatureControlsWidget.nozzleHeaterChanged.connect(self.setNozzleTemperature)
 
         # Manual widget
         self.manualWidget = ManualWidget()
-        self.manualWidget.probe.connect(lambda name, x, y: self.manualProbe(name, x, y)) # TODO: Is a lambda required here?
+        self.manualWidget.probe.connect(self.manualProbe)
 
         # Mesh widget
         self.meshWidget = MeshWidget()
@@ -131,21 +95,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabWidget.addTab(self.manualWidget, 'Manual')
         self.tabWidget.addTab(self.meshWidget, 'Mesh')
 
-    def _layoutWidgets(self):
-        # Connection layout
-        connectionLayout = QtWidgets.QHBoxLayout()
-        connectionLayout.addWidget(QtWidgets.QLabel('Printer:'))
-        connectionLayout.addWidget(self.printerComboBox)
-        connectionLayout.addWidget(QtWidgets.QLabel('Port:'))
-        connectionLayout.addWidget(self.portComboBox)
-        connectionLayout.addWidget(self.connectButton)
-        connectionLayout.addStretch()
-        connectionLayout.addWidget(self.homeButton)
-        connectionGroupBox = QtWidgets.QGroupBox('Connection')
-        connectionGroupBox.setLayout(connectionLayout)
-
+    def __layoutWidgets(self):
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(connectionGroupBox)
+        layout.addWidget(self.printerConnectWidget)
         layout.addWidget(self.temperatureControlsWidget)
         layout.addWidget(self.tabWidget)
 
@@ -153,7 +105,7 @@ class MainWindow(QtWidgets.QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-    def _createMenus(self):
+    def __createMenus(self):
         # File menu
         self.fileMenu = QtWidgets.QMenu('File', self)
         self.exitAction = QtGui.QAction('Exit', self)
@@ -166,7 +118,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.portsMenu = QtWidgets.QMenu('Ports', self)
         self.enumeratePortsAction = QtGui.QAction('Enumerate', self)
         self.enumeratePortsAction.setStatusTip('Reenumerate COM ports')
-        self.enumeratePortsAction.triggered.connect(self.enumeratePorts)
+        self.enumeratePortsAction.triggered.connect(self.printerConnectWidget.enumeratePorts)
         self.portsMenu.addAction(self.enumeratePortsAction)
         self.menuBar().addMenu(self.portsMenu)
 
@@ -175,273 +127,241 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.helpMenu = QtWidgets.QMenu('Help', self)
         self.aboutAction = QtGui.QAction('About', self)
-        self.aboutAction.triggered.connect(lambda : self.dialogs['about'].exec())
+        self.aboutAction.triggered.connect(lambda : AboutDialog(DESCRIPTION).exec())
         self.helpMenu.addAction(self.aboutAction)
         self.aboutQtAction = QtGui.QAction('About Qt', self)
         self.aboutQtAction.triggered.connect(qApp.aboutQt)
         self.helpMenu.addAction(self.aboutQtAction)
         self.menuBar().addMenu(self.helpMenu)
 
-    def _createStatusBar(self):
+    def __createStatusBar(self):
         self.setStatusBar(StatusBar())
 
-    def _createDialogs(self):
-        self.dialogs = {'homing': HomingDialog(),
-                        'zProbeOffset': NoButtonStatusDialog(text='Getting probe offsets.'),
-                        'initializingMesh': NoButtonStatusDialog(text='Initializing mesh.'),
-                        'manualProbe': ManualProbeDialog(),
-                        'updatingMesh': NoButtonStatusDialog(text='Updating mesh.'),
-                        'about': AboutDialog('A utility aiding in FDM printer bed leveling.')}
+    def __createDialogs(self):
+        self.dialogs = {self.Dialog.INITIALIZING: CancellableStatusDialog(text='Initializing printer', parent=self),
+                        self.Dialog.HOMING: CancellableStatusDialog(text='Homing', parent=self),
+                        self.Dialog.PROBE: CancellableStatusDialog(text='Manually probing (x, y)', parent=self)}
 
-    def _createTimers(self):
+        self.dialogs[self.Dialog.INITIALIZING].rejected.connect(self.disconnectFromPrinter)
+        self.dialogs[self.Dialog.HOMING].rejected.connect(self._cancel)
+        self.dialogs[self.Dialog.PROBE].rejected.connect(self._cancel)
+
+    def __createTimers(self):
         self.temperatureJobPending = False
         self.temperatureTimer = QtCore.QTimer()
         self.temperatureTimer.setInterval(1000) # TODO: Make the interval configurable
-        self.temperatureTimer.timeout.connect(self.requestTemperature)
+        self.temperatureTimer.timeout.connect(self.getTemperatures)
 
-    def _processResponse(self, name, id_, context, response):
-        if name in ('M104', 'M140'):
-            return
+    def _createId(self, base):
+        self.currentId += 1
+        return f'{base}-{self.currentId}'
 
-        elif name == 'M105':
-            assert(id_ == 'temp')
-            self.temperatureJobPending -= 1
-            self.statusBar().setBedTemp(response['bedActual'], response['bedDesired'])
-            self.statusBar().setNozzleTemp(response['toolActual'], response['toolDesired'])
+    def connectToPrinter(self):
+        assert(self.printerInfo == self.printerConnectWidget.printerInfo())
 
+        # Create the printer and determine open arguments
+        if self.printerConnectWidget.connectionMode() == ConnectionMode.MARLIN_2:
+            self.printer = Marlin2Printer(self.printerConnectWidget.printerInfo(), parent=self)
+            kwargs = {'port': self.printerConnectWidget.port()}
+        elif self.printerConnectWidget.connectionMode() == ConnectionMode.MOONRAKER:
+            self.printer = MoonrakerPrinter(self.printerConnectWidget.printerInfo(), parent=self)
+            kwargs = {'host': self.printerConnectWidget.host()}
         else:
-            match self.state:
-                case self.State.DISCONNECTED:
-                    return
+            raise ValueError('Unsupported printer type detected.')
 
-                case self.State.GETTING_Z_PROBE_OFFSETS:
-                    assert(id_ == 'zProbeOffsets')
-                    self.zProbeOffsetX = response['x']
-                    self.zProbeOffsetY = response['y']
-                    self.dialogs['zProbeOffset'].accept()
-                    self.home(True)
+        # Make connections
+        self.printerQtConnections.append(self.printer.errorOccurred.connect(self._error))
+        self.printerQtConnections.append(self.printer.inited.connect(self._processInitResults))
+        self.printerQtConnections.append(self.printer.homed.connect(self._finishHoming))
+        self.printerQtConnections.append(self.printer.gotTemperatures.connect(self.updateTemperatures))
+        self.printerQtConnections.append(self.printer.gotMeshCoordinates.connect(self._initializeMesh))
+        self.printerQtConnections.append(self.printer.probed.connect(self._processProbe))
 
-                case self.State.INITIAL_HOMING:
-                    assert(id_ == 'homing')
-                    self.dialogs['homing'].accept()
-                    self.initMesh()
+        # Open the printer
+        self.printer.open(**kwargs)
+        self.printerConnectWidget.setConnected()
+        self.meshCoordinates = None
 
-                case self.State.INITIALIZING_MESH:
-                    if id_ == 'initMesh-RaiseZ':
-                        self.connection.sendG42('initMesh-moveToMeshFrontLeftCoordinate', f = 3000, i = 0, j = 0)
+        # Start the temperature timer
+        self.temperatureJobPending = False
+        if not self.noTemperatureReporting:
+            self.temperatureTimer.start()
 
-                    elif id_ == 'initMesh-moveToMeshFrontLeftCoordinate':
-                        self.connection.sendM114('initMesh-getRawMeshFrontLeftCoordinate')
+        # Initialize the printer
+        self.updateState(self.State.INITIALIZING)
+        self.printer.init(self._createId('init'))
+        self.dialogs[self.Dialog.INITIALIZING].show()
 
-                    elif id_ == 'initMesh-getRawMeshFrontLeftCoordinate':
-                        self.rawMeshFrontLeftCoordinate = Point2D(response['x'], response['y'])
-                        if self.rawMeshFrontLeftCoordinate == Point2D(0, 0):
-                            self._error( 'The printer doesn\'t appear to have an automatic bed leveling mesh.\n' \
-                                        f'Please perform automatic bed leveling and then try using {QtCore.QCoreApplication.applicationName()} again.')
-                            return
-                        self.connection.sendM400('initMesh-waitForMeshFrontLeftCoordinate')
+    def disconnectFromPrinter(self):
+        assert(self.printerInfo == self.printerConnectWidget.printerInfo())
 
-                    elif id_ == 'initMesh-waitForMeshFrontLeftCoordinate':
-                        self.connection.sendG42('initMesh-moveToMeshBackRightCoordinate', f = 3000,
-                                                                                 i = self.printerInfo.mesh.columnCount - 1,
-                                                                                 j = self.printerInfo.mesh.rowCount - 1)
+        # Stop the temperature timer
+        self.temperatureJobPending = False
+        self.temperatureTimer.stop()
 
-                    elif id_ == 'initMesh-moveToMeshBackRightCoordinate':
-                        self.connection.sendM400('initMesh-waitForMeshBackRightCoordinate')
+        # Close the printer
+        self.printerConnectWidget.setDisconnected()
+        self.printer.close()
+        self.meshCoordinates = None
+        self.updateState(self.State.DISCONNECTED)
 
-                    elif id_ == 'initMesh-waitForMeshBackRightCoordinate':
-                        self.connection.sendM114('initMesh-getRawMeshBackRightCoordinate')
+        # Break connections
+        for qtConnection in self.printerQtConnections:
+            self.printer.disconnect(qtConnection)
+        self.printerQtConnections = []
 
-                    elif id_ == 'initMesh-getRawMeshBackRightCoordinate':
-                        self.rawMeshBackRightCoordinate = Point2D(response['x'], response['y'])
+        self.printer = None
 
-                        # Determine the mesh coordinates
-                        xBase = self.rawMeshFrontLeftCoordinate.x
-                        yBase = self.rawMeshFrontLeftCoordinate.y
-                        xStep = (self.rawMeshBackRightCoordinate.x - self.rawMeshFrontLeftCoordinate.x) / (len(self.meshCoordinates[0]) - 1)
-                        yStep = (self.rawMeshBackRightCoordinate.y - self.rawMeshFrontLeftCoordinate.y) / (len(self.meshCoordinates) - 1)
-                        for row in range(self.printerInfo.mesh.rowCount):
-                            y = yBase + row*yStep
-                            for column in range(self.printerInfo.mesh.columnCount):
-                                self.meshCoordinates[row][column] = Point2D(x = xBase + column*xStep,
-                                                                            y = y)
+    def switchPrinter(self):
+        assert(self.printerInfo != self.printerConnectWidget.printerInfo())
+        self.printerInfo = self.printerConnectWidget.printerInfo()
 
-                        self.dialogs['initializingMesh'].accept()
-                        self._updateState(self.State.CONNECTED)
-
-                    else:
-                        print(f'Unknown id: {id_}')
-                        assert(False)
-
-                    self._updateState() # TODO: Determine if this is still needed
-
-                case self.State.CONNECTED:
-                    return
-
-                case self.State.USER_HOMING:
-                    assert(id_ == 'homing')
-                    self.dialogs['homing'].accept()
-                    self._updateState(self.State.CONNECTED)
-
-                case self.State.MANUAL_PROBE:
-                    if id_ == 'manualProbeMove':
-                        self.connection.sendG30('manualProbeProbe', context=context, x=context['x'], y=context['y'])
-
-                    elif id_ == 'manualProbeProbe':
-                        self.manualWidget.reportProbe(context['name'], response)
-                        self.dialogs['manualProbe'].accept()
-                        self._updateState(self.State.CONNECTED)
-
-                    else:
-                        assert(False)
-
-                case self.State.UPDATING_MESH:
-                    assert(self.meshCoordinates is not None)
-                    assert(id_ == 'updateMeshProbe' or id_ == 'updateMeshMove')
-
-                    if id_ == 'updateMeshProbe':
-                        # Update the mesh point
-                        self.meshWidget.setPoint(row=context['row'], column=context['column'], offset=response['bed']['z'], z=response['position']['z'])
-
-                        # Probe the next coordinate
-                        context['column'] += 1
-                        if context['column'] >= len(self.meshCoordinates[0]):
-                            context['column'] = 0
-                            context['row'] += 1
-                            if context['row'] >= len(self.meshCoordinates):
-                                print(f'mesh done {context["row"]}{context["column"]}')
-                                self.dialogs['updatingMesh'].accept()
-                                self._updateState(self.State.CONNECTED)
-                                return
-
-                    point = self.meshCoordinates[context['row']][context['column']]
-                    self.connection.sendG30('updateMeshProbe', context=context, x=point.x, y=point.y)
-
-                case _:
-                    assert(False)
+        try:
+            self.manualWidget.setPrinter(self.printerInfo)
+            self.meshWidget.resizeMesh(0, 0)
+        except ValueError as valueError:
+            self._fatalError(valueError.args[0])
 
     @classmethod
     def _FloatToString(value):
         return f'{value}'
 
-    def _updateState(self, state=None):
+    def updateState(self, state=None):
         if state is not None:
             self.state = state
 
-        self.printerComboBox.setEnabled(not self.connection.connected())
-        self.portComboBox.setEnabled(not self.connection.connected())
-        self.enumeratePortsAction.setEnabled(not self.connection.connected())
+        connected = self.printer is not None and self.printer.connected()
+        busy = self.state != self.State.CONNECTED
 
-        self.temperatureControlsWidget.setEnabled(self.connection.connected())
-        self.manualWidget.setEnabled(self.connection.connected())
-        self.meshWidget.setEnabled(self.connection.connected())
-
-        QtCore.QObject.disconnect(self.connectButton, None, None, None)
-        if not self.connection.connected():
-            self.connectButton.setText('Connect')
-            self.connectButton.clicked.connect(lambda x: self._openSerialPort(self.portComboBox.currentText()))
+        if not connected:
+            self.printerConnectWidget.setDisconnected()
+        elif busy:
+            self.printerConnectWidget.setBusy()
         else:
-            self.connectButton.setText('Disconnect')
-            self.connectButton.clicked.connect(self._closeSerialPort)
+            self.printerConnectWidget.setConnected()
+
+        self.enumeratePortsAction.setEnabled(not connected)
+
+        self.temperatureControlsWidget.setEnabled(connected and not busy)
+        self.manualWidget.setEnabled(connected and not busy)
+        self.meshWidget.setEnabled(connected and not busy)
+
         self.statusBar().setState(self.state)
-        self.homeButton.setEnabled(self.connection.connected())
 
-    def enumeratePorts(self):
-        current = self.portComboBox.currentText()
-        self.portComboBox.clear()
-        serialPortInfoList = QtSerialPort.QSerialPortInfo.availablePorts()
-        for serialPortInfo in serialPortInfoList:
-            self.portComboBox.addItem(serialPortInfo.portName())
-        self.portComboBox.setCurrentText(current)
+    def getTemperatures(self):
+        if not self.temperatureJobPending:
+            self.temperatureJobPending = True
+            self.printer.getTemperatures(self._createId('getTemperatures'))
 
-    def _openSerialPort(self, portName):
-        try:
-            # Open serial port
-            self.connection.open(portName)
+    def updateTemperatures(self, id_, context, result):
+        self.temperatureJobPending = False
+        self.statusBar().setBedTemp(actual=result.bedActual, desired=result.bedDesired, power=result.bedPower)
+        self.statusBar().setNozzleTemp(actual=result.toolActual, desired=result.toolDesired, power=result.toolPower)
 
-            # Start temperature monitoring
-            self.temperatureTimer.start()
-            self.requestTemperature()
+    def _processInitResults(self, id_, context):
+        self.printer.getMeshCoordinates(self._createId('getMeshCoordinates'))
+        self.updateState(self.State.INITIALIZING_MESH)
 
-            # Start the initialization sequence
-            self.requestZProbeOffsets()
+    def _initializeMesh(self, id_, context, result):
+        self.meshCoordinates = result.meshCoordinates
+        self.meshWidget.resizeMesh(result.rowCount,
+                                   result.columnCount)
+        self.updateState(self.State.CONNECTED)
+        self.dialogs[self.Dialog.INITIALIZING].accept()
 
-        except IOError as exception:
-            self._error(exception.args[1])
+    def home(self):
+        self.printer.home(self._createId('home'))
+        self.updateState(self.State.HOMING)
+        self.dialogs[self.Dialog.HOMING].show()
 
-        self._updateState()
-
-    def _closeSerialPort(self):
-        self.connection.close()
-        self.temperatureTimer.stop()
-        self._updateState(self.State.DISCONNECTED)
-
-    def requestTemperature(self):
-        if self.temperatureJobPending <= 0:
-            self.temperatureJobPending = 1
-            self.connection.sendM105('temp')
-
-    def requestZProbeOffsets(self):
-        self.zProbeOffsetX = None
-        self.zProbeOffsetY = None
-
-        self.connection.sendM851('zProbeOffsets')
-        self._updateState(self.State.GETTING_Z_PROBE_OFFSETS)
-        self.dialogs['zProbeOffset'].show()
-
-    def home(self, initializing):
-        self.connection.sendG28('homing')
-        self.dialogs['homing'].setAxes(x=True, y=True, z=True)
-
-        self._updateState(self.State.INITIAL_HOMING if initializing else self.State.USER_HOMING)
-        self.dialogs['homing'].show()
-
-    def initMesh(self):
-        self.rawMeshFrontLeftCoordinate = None
-        self.rawMeshBackRightCoordinate = None
-        self.meshCoordinates = [[None for column in range(self.printerInfo.mesh.columnCount)] for row in range(self.printerInfo.mesh.rowCount)]
-
-        self.connection.sendG0('initMesh-RaiseZ', z=3)
-
-        self._updateState(self.State.INITIALIZING_MESH)
-        self.dialogs['initializingMesh'].show()
+    def _finishHoming(self, id_, context):
+        if not id_.startswith('home'):
+            self._error('An error occurred while homing.')
+        else:
+            self.updateState(self.State.CONNECTED)
+            self.dialogs[self.Dialog.HOMING].accept()
 
     def manualProbe(self, name, x, y):
-        assert(self.connection.connected())
+        context={'type': self.State.MANUAL_PROBE,
+                 'name': name}
 
-        context={'name': name,
-                 'x': x,
-                 'y': y}
+        self.printer.probe(self._createId('probe'), context=context, x=x, y=y)
+        self.dialogs[self.Dialog.PROBE].setText(f'Manually probing at ({x}, {y})')
+        self.updateState(self.State.MANUAL_PROBE)
+        self.dialogs[self.Dialog.PROBE].show()
 
-        # Ensure the nozzle will not scrape the print surface
-        self.connection.sendG0('manualProbeMove', context=context, z=3)
+    def updateMesh(self, row=0, column=0):
+        if row == 0 and column == 0:
+            self.meshWidget.clear()
 
-        self.dialogs['manualProbe'].setProbePoint(**context)
-        self._updateState(self.State.MANUAL_PROBE)
-        self.dialogs['manualProbe'].show()
+        coordinate = self.meshCoordinates[row][column]
+        self.printer.probe(self._createId('updateMesh'),
+                           context = {'type': self.State.UPDATING_MESH,
+                                      'row': row,
+                                      'column': column},
+                           x=coordinate.x,
+                           y=coordinate.y)
 
-    def updateMesh(self):
-        assert(self.connection.connected())
+        self.updateState(self.State.UPDATING_MESH)
+        self.dialogs[self.Dialog.PROBE].setText(f'Probing mesh at row: {row}, column: {column} (x: {coordinate.x:.3f}, y: {coordinate.y:.3f})')
+        self.dialogs[self.Dialog.PROBE].show()
 
-        # Ensure the nozzle will not scrape the print surface
-        self.connection.sendG0('updateMeshMove',
-                               context={'row': 0,
-                                        'column': 0},
-                               z=3)
+    def _processProbe(self, id_, context, response):
+        if 'type' not in context:
+            self._error('Detected a printer response mismatch.')
+        elif context['type'] == self.State.MANUAL_PROBE:
+            assert(self.state == self.State.MANUAL_PROBE)
+            self.manualWidget.reportProbe(context['name'], response)
+            self.dialogs[self.Dialog.PROBE].accept()
+            self.updateState(self.State.CONNECTED)
+        else:
+            assert(context['type'] == self.State.UPDATING_MESH and self.state == self.State.UPDATING_MESH)
+            row = context['row']
+            column = context['column']
 
-        self._updateState(self.State.UPDATING_MESH)
-        self.dialogs['updatingMesh'].show()
+            self.meshWidget.setPoint(row=row,
+                                     column=column,
+                                     z=response.z)
+
+            column += 1
+            if column >= len(self.meshCoordinates[0]):
+                column = 0
+                row += 1
+                if row >= len(self.meshCoordinates):
+                    row  = 0
+            if row == 0 and column == 0:
+                self.dialogs[self.Dialog.PROBE].accept()
+                self.updateState(self.State.CONNECTED)
+            else:
+                self.updateMesh(row, column)
+
+    def setBedTemperature(self, state, temp):
+        self.printer.setBedTemperature(self._createId('setBedTemperature'), temperature=temp if state else 0)
+
+    def setNozzleTemperature(self, state, temp):
+        self.printer.setNozzleTemperature(self._createId('setNozzleTemperature'), temperature=temp if state else 0)
+
+    def _cancel(self):
+        """ Cancel operations that are safe to cancel """
+
+        for dialog in self.dialogs.values():
+            dialog.blockSignals(True)
+            dialog.reject()
+            dialog.blockSignals(False)
+
+        self.printer.abort()
+        self.updateState(self.State.CONNECTED)
 
     def _fatalError(self, message):
         self.logger.critical(message)
-        self._closeSerialPort()
+        self.disconnectFromPrinter()
         for dialog in self.dialogs.values():
             dialog.reject()
         FatalErrorDialog(self, message)
 
     def _error(self, message):
         self.logger.error(message)
-        self._closeSerialPort()
+        self.disconnectFromPrinter()
         for dialog in self.dialogs.values():
             dialog.reject()
         ErrorDialog(self, message)
@@ -453,27 +373,31 @@ class MainWindow(QtWidgets.QMainWindow):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'Icon-128x128.png').as_posix()))
-
-    QtCore.QCoreApplication.setApplicationName('Bed Leveler 5000')
-    QtCore.QCoreApplication.setApplicationVersion(Version.version())
+    app.setApplicationName('Bed Leveler 5000')
+    app.setApplicationVersion(Version.version())
 
     # Windows only, configure icon settings
     try:
         from ctypes import windll
-        myappid = f'com.sandmmakers.bedleveler5000.{QtCore.QCoreApplication.setApplicationVersion}'
+        myappid = f'com.sandmmakers.bedleveler5000.{QtCore.QCoreApplication.applicationVersion()}'
         windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     except ImportError:
         pass
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Utility for bed leveling')
-    parser.add_argument('-v', '--version', action='version', version=QtCore.QCoreApplication.applicationVersion())
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument('-v', '--version', action='version', version=app.applicationVersion())
     parser.add_argument('--printers-dir', default=Common.baseDir() / 'Printers', type=pathlib.Path, help='printer information directory')
     parser.add_argument('--printer', default=None, help='printer to use')
-    parser.add_argument('--port', default=None, help='port to use')
-    parser.add_argument('--log_level', choices=['debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
-    parser.add_argument('--log_console', action='store_true', help='log to the console')
-    parser.add_argument('--log_file', type=pathlib.Path, default=None, help='log file')
+    parser.add_argument('--no-temperature-reporting', action='store_true', help='disable temperature reporting')
+
+    printerSpecificGroup = parser.add_mutually_exclusive_group()
+    printerSpecificGroup.add_argument('--port', default=None, help='port to use for Marlin2 connection')
+    printerSpecificGroup.add_argument('--host', default=None, help='host to use for Moonraker connection')
+
+    parser.add_argument('--log-level', choices=['all', 'debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
+    parser.add_argument('--log-console', action='store_true', help='log to the console')
+    parser.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
 
     args = parser.parse_args()
 
@@ -484,6 +408,15 @@ if __name__ == '__main__':
     if args.printers_dir is not None and not args.printers_dir.exists():
         FatalErrorDialog(None, f'Failed to find printer directory: {args.printers_dir}.')
 
-    mainWindow = MainWindow(printersDir=args.printers_dir, printer=args.printer, port=args.port)
-    mainWindow.show()
-    app.exec()
+    try:
+        mainWindow = MainWindow(printersDir=args.printers_dir,
+                                printer=args.printer,
+                                host=args.host,
+                                port=args.port,
+                                noTemperatureReporting=args.no_temperature_reporting)
+        mainWindow.show()
+        sys.exit(app.exec())
+    except KeyboardInterrupt:
+        sys.exit(1)
+    except Exception as exception:
+        FatalErrorDialog(None, str(exception))

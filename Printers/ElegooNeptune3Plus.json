@@ -1,17 +1,14 @@
 {
+    "version": 2,
     "displayName": "Neptune 3 Plus",
+    "connectionMode": "Marlin2",
     "connection": {
-                      "gCodeFlavor": "Marlin 2",
                       "baudRate": "115200",
                       "dataBits": "8",
                       "parity": "No",
                       "stopBits": "1",
                       "flowControl": "No"
                   },
-    "mesh": {
-                "columnCount": 7,
-                "rowCount": 7
-            },
     "manualProbePoints": [{
                               "name": "1",
                               "row": 2,

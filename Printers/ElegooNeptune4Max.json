@@ -1,62 +1,56 @@
 {
     "version": 2,
-    "displayName": "Neptune 3 Max",
-    "connectionMode": "Marlin2",
-    "connection": {
-                      "baudRate": "115200",
-                      "dataBits": "8",
-                      "parity": "No",
-                      "stopBits": "1",
-                      "flowControl": "No"
-                  },
+    "displayName": "Neptune 4 Max",
+    "connectionMode": "Moonraker",
+    "connection": {},
     "manualProbePoints": [{
                               "name": "1",
                               "row": 2,
                               "column": 0,
-                              "x": 37.5,
-                              "y": 37.5
+                              "x": 30.0,
+                              "y": 30.0
                           },
                           {
                               "name": "2",
                               "row": 1,
                               "column": 0,
-                              "x": 37.5,
-                              "y": 215
+                              "x": 30.0,
+                              "y": 210.0
                           },
                           {
                               "name": "3",
                               "row": 0,
                               "column": 0,
-                              "x": 37.5,
-                              "y": 392.5
+                              "x": 30.0,
+                              "y": 385.0
                           },
                           {
                               "name": "4",
                               "row": 0,
                               "column": 2,
-                              "x": 392.5,
-                              "y": 392.5
+                              "x": 385.0,
+                              "y": 385.0
                           },
                           {
                               "name": "5",
                               "row": 1,
                               "column": 2,
-                              "x": 392.5,
-                              "y": 215
+                              "x": 385.0,
+                              "y": 210.0
                           },
                           {
                               "name": "6",
                               "row": 2,
                               "column": 2,
-                              "x": 392.5,
-                              "y": 37.5
+                              "x": 385.0,
+                              "y": 30.0
                           },
                           {
                               "name": "H",
                               "row": 1,
                               "column": 1,
-                              "x": 243.5,
-                              "y": 193
+                              "x": 215.0,
+                              "y": 215.0
                           }
                          ]
 }

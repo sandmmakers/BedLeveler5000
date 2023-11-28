@@ -1,26 +1,41 @@
 #!/usr/bin/env python
 
-from CommandConnection import CommandConnection
-import Common
+from Common import Common
 from Dialogs.AboutDialog import AboutDialog
-from Dialogs.NoButtonStatusDialog import NoButtonStatusDialog
-from Dialogs.WarningDialog import WarningDialog
+from Dialogs.PrinterInfoWizard.TestConnectionDialog import TestConnectionDialog
+from Dialogs.PrinterInfoWizard.ConfigureGridPointDialog import ConfigureGridPointDialog
+from Dialogs.PrinterInfoWizard.PerformHomingDialog import PerformHomingDialog
 from Dialogs.ErrorDialog import ErrorDialog
-from Dialogs.FatalErrorDialog import FatalErrorDialog
-from Dialogs.TestConnectionDialog import TestConnectionDialog
-from Dialogs.ConfigureGridPointDialog import ConfigureGridPointDialog # TODO: Standardize how dialogs are used
-from Dialogs.PerformHomingDialog import PerformHomingDialog # TODO: Standardize how dialogs are used
-import PrinterInfo
-from PortComboBox import PortComboBox
-import WizardGrid
-import Version
+from Common import PrinterInfo
+from Common.PrinterInfo import ConnectionMode
+from Common.PrinterInfo import CONNECTION_MODE_MAP
+from Common.PrinterInfo import BAUD_RATE_MAP
+from Common.PrinterInfo import DATA_BITS_MAP
+from Common.PrinterInfo import PARITY_MAP
+from Common.PrinterInfo import STOP_BITS_MAP
+from Common.PrinterInfo import FLOW_CONTROL_MAP
+from Common.PrinterInfo import PRINTER_INFO_FILE_FILTER
+from Common.PrinterInfo import Marlin2Connection
+from Common.PrinterInfo import MoonrakerConnection
+from Widgets.PrinterConnectWidget import PrinterConnectWidget
+from Widgets.PrinterInfoWizard import WizardGrid
+from Widgets.PrinterInfoWizard.SerialWidget import SerialWidget
+from Common import Version
 from PySide6 import QtCore
 from PySide6 import QtGui
 from PySide6 import QtWidgets
 from PySide6 import QtSerialPort
+import argparse
 import json
 import logging
 import pathlib
+import signal
+import sys
+
+# Enable CTRL-C killing the application
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+DESCRIPTION = 'A utility for creating and editing printer infos.'
 
 class PrinterInfoWizard(QtWidgets.QMainWindow):
     def __init__(self, *args, **kwargs):
@@ -29,132 +44,132 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
         self.setWindowTitle('Printer Info Wizard')
         self.logger = logging.getLogger(self.windowTitle())
 
-        self._createWidgets()
-        self._layoutWidgets()
-        self._createMenus()
-        self._createDialogs()
+        self.__createWidgets()
+        self.__layoutWidgets()
+        self.__createMenus()
+        self.__createDialogs()
 
         self.loadDefaults()
+        self.updateConnectionMode()
+        self.enumeratePorts()
 
-    def _createWidgets(self):
-        self.portComboBox = PortComboBox()
+    def __createWidgets(self):
+        self.connectionModeComboBox = QtWidgets.QComboBox()
+        for label, mode in CONNECTION_MODE_MAP.items():
+            self.connectionModeComboBox.addItem(label, mode)
+        self.connectionModeComboBox.currentIndexChanged.connect(self.updateConnectionMode)
 
-        self.defaultsButton = QtWidgets.QPushButton('Defaults')
-        self.defaultsButton.clicked.connect(self.loadDefaults)
+        self.specificStackedWidget = QtWidgets.QStackedWidget()
+        self.specificStackedWidget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
-        self.homeButton = QtWidgets.QPushButton('Home')
-        self.homeButton.clicked.connect(self.home)
+        self.portComboBox = QtWidgets.QComboBox()
+        self.hostLineEdit = QtWidgets.QLineEdit()
 
         self.displayNameLineEdit = QtWidgets.QLineEdit()
 
-        self.gCodeFlavorComboBox = QtWidgets.QComboBox()
-        for label, value in PrinterInfo.G_CODE_FLAVOR_MAP.items():
-            self.gCodeFlavorComboBox.addItem(label, value)
+        self.marlin2ConnectionWidget = SerialWidget()
+        self.moonrakerConnectionWidget = QtWidgets.QWidget()
 
-        self.baudRateComboBox = QtWidgets.QComboBox()
-        for label, value in PrinterInfo.BAUD_RATE_MAP.items():
-            self.baudRateComboBox.addItem(label, value)
-
-        self.dataBitsComboBox = QtWidgets.QComboBox()
-        for label, value in PrinterInfo.DATA_BITS_MAP.items():
-            self.dataBitsComboBox.addItem(label, value)
-
-        self.parityComboBox = QtWidgets.QComboBox()
-        for label, value in PrinterInfo.PARITY_MAP.items():
-            self.parityComboBox.addItem(label, value)
-
-        self.stopBitsComboBox = QtWidgets.QComboBox()
-        for label, value in PrinterInfo.STOP_BITS_MAP.items():
-            self.stopBitsComboBox.addItem(label, value)
-
-        self.flowControlComboBox = QtWidgets.QComboBox()
-        for label, value in PrinterInfo.FLOW_CONTROL_MAP.items():
-            self.flowControlComboBox.addItem(label, value)
+        self.connectionStackedWidget = QtWidgets.QStackedWidget()
+        self.connectionStackedWidget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
         self.testButton = QtWidgets.QPushButton('Test')
         self.testButton.clicked.connect(self.test)
 
-        self.columnCountSpinBox = QtWidgets.QSpinBox()
-        self.columnCountSpinBox.setMinimum(2)
-        self.columnCountSpinBox.setMaximum(20)
-
-        self.rowCountSpinBox = QtWidgets.QSpinBox()
-        self.rowCountSpinBox.setMinimum(2)
-        self.rowCountSpinBox.setMaximum(20)
+        self.homeButton = QtWidgets.QPushButton('Home')
+        self.homeButton.clicked.connect(self.home)
 
         self.grid = WizardGrid.Grid('Manual Test Points')
         self.grid.cellClicked.connect(self.configureManualProbePoint)
 
-    def _layoutWidgets(self):
-        portLayout = QtWidgets.QHBoxLayout()
-        portLayout.addWidget(QtWidgets.QLabel('Port:'))
-        portLayout.addWidget(self.portComboBox)
-        portLayout.addStretch()
-        portLayout.addWidget(self.defaultsButton)
-        portLayout.addWidget(self.homeButton)
+    def __layoutWidgets(self):
+        # Layout stacked widgets
+        for label, mode in CONNECTION_MODE_MAP.items():
+            if mode == ConnectionMode.MOONRAKER:
+                hostLayout = QtWidgets.QHBoxLayout()
+                hostLayout.addWidget(QtWidgets.QLabel('Host:'))
+                hostLayout.addWidget(self.hostLineEdit)
+                hostLayout.addStretch()
+                hostWidget = QtWidgets.QWidget()
+                hostWidget.setLayout(hostLayout)
+                hostWidget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+                self.specificStackedWidget.addWidget(hostWidget)
+
+                self.connectionStackedWidget.addWidget(self.moonrakerConnectionWidget)
+            elif mode == ConnectionMode.MARLIN_2:
+                portLayout = QtWidgets.QHBoxLayout()
+                portLayout.addWidget(QtWidgets.QLabel('Port:'))
+                portLayout.addWidget(self.portComboBox)
+                portLayout.addStretch()
+                portWidget = QtWidgets.QWidget()
+                portWidget.setLayout(portLayout)
+                portWidget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+                self.specificStackedWidget.addWidget(portWidget)
+
+                self.connectionStackedWidget.addWidget(self.marlin2ConnectionWidget)
+            else:
+                assert('Unsupported communication mode detected.')
+
+        topLayout = QtWidgets.QHBoxLayout()
+        topLayout.addWidget(QtWidgets.QLabel('Connection mode:'))
+        topLayout.addWidget(self.connectionModeComboBox)
+        topLayout.addWidget(self.specificStackedWidget)
+        topLayout.addStretch()
 
         displayNameLayout = QtWidgets.QHBoxLayout()
         displayNameLayout.addWidget(QtWidgets.QLabel('Display Name:'))
         displayNameLayout.addWidget(self.displayNameLineEdit)
 
-        testLayout = QtWidgets.QHBoxLayout()
-        testLayout.addStretch()
-        testLayout.addWidget(self.testButton)
-        testLayout.addStretch()
+        connectionButtonLayout = QtWidgets.QHBoxLayout()
+        connectionButtonLayout.addWidget(self.testButton)
+        connectionButtonLayout.addWidget(self.homeButton)
 
-        connectionLayout = QtWidgets.QFormLayout()
-        connectionLayout.addRow('G-code:' , self.gCodeFlavorComboBox)
-        connectionLayout.addRow('Baud Rate:', self.baudRateComboBox)
-        connectionLayout.addRow('Data Bits:', self.dataBitsComboBox)
-        connectionLayout.addRow('Parity:', self.parityComboBox)
-        connectionLayout.addRow('Stop Bits:', self.stopBitsComboBox)
-        connectionLayout.addRow('Flow Control:', self.flowControlComboBox)
-        connectionLayout.addRow(testLayout)
+        connectionLayout = QtWidgets.QVBoxLayout()
+        connectionLayout.addWidget(self.connectionStackedWidget)
+        connectionLayout.addStretch()
+        connectionLayout.addLayout(connectionButtonLayout)
 
         connectionGroupBox = QtWidgets.QGroupBox('Connection')
         connectionGroupBox.setLayout(connectionLayout)
 
-        meshLayout = QtWidgets.QFormLayout()
-        meshLayout.addRow('Cols:', self.columnCountSpinBox)
-        meshLayout.addRow('Rows:', self.rowCountSpinBox)
-
-        meshGroupBox = QtWidgets.QGroupBox('Mesh')
-        meshGroupBox.setLayout(meshLayout)
-
-        groupBoxLayout = QtWidgets.QHBoxLayout()
-        groupBoxLayout.addWidget(connectionGroupBox)
-        groupBoxLayout.addWidget(meshGroupBox)
+        connectionGridLayout = QtWidgets.QHBoxLayout()
+        connectionGridLayout.addWidget(connectionGroupBox)
+        connectionGridLayout.addWidget(self.grid)
 
         printerInfoLayout = QtWidgets.QVBoxLayout()
         printerInfoLayout.addLayout(displayNameLayout)
-        printerInfoLayout.addLayout(groupBoxLayout)
-        printerInfoLayout.addWidget(self.grid)
+        printerInfoLayout.addLayout(connectionGridLayout)
 
         printerInfoGroupBox = QtWidgets.QGroupBox('Printer Info')
         printerInfoGroupBox.setLayout(printerInfoLayout)
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(portLayout)
+        layout.addLayout(topLayout)
         layout.addWidget(printerInfoGroupBox)
-
 
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-    def _createMenus(self):
+    def __createMenus(self):
         # File menu
         self.fileMenu = QtWidgets.QMenu('File', self)
         self.openAction = QtGui.QAction('Open', self)
         self.openAction.setStatusTip('Open a printer info file')
         self.openAction.triggered.connect(self.openFile)
         self.fileMenu.addAction(self.openAction)
+
+        self.loadDefaultsAction = QtGui.QAction('Load defaults', self)
+        self.loadDefaultsAction.setStatusTip('Open a printer info file')
+        self.loadDefaultsAction.triggered.connect(self.loadDefaults)
+        self.fileMenu.addAction(self.loadDefaultsAction)
+
         self.saveAsAction = QtGui.QAction('Save as', self)
         self.saveAsAction.setStatusTip('Save printer info to a new file')
         self.saveAsAction.triggered.connect(self.saveAsFile)
         self.fileMenu.addAction(self.saveAsAction)
         self.exitAction = QtGui.QAction('Exit', self)
-        self.exitAction.setStatusTip('Exit the application') # TODO: Handle getting opened as a dialog
+        self.exitAction.setStatusTip('Exit the application')
         self.exitAction.triggered.connect(self.close)
         self.fileMenu.addAction(self.exitAction)
         self.menuBar().addMenu(self.fileMenu)
@@ -163,7 +178,7 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
         self.portsMenu = QtWidgets.QMenu('Ports', self)
         self.enumeratePortsAction = QtGui.QAction('Enumerate', self)
         self.enumeratePortsAction.setStatusTip('Reenumerate COM ports')
-        self.enumeratePortsAction.triggered.connect(self.portComboBox.enumeratePorts)
+        self.enumeratePortsAction.triggered.connect(self.enumeratePorts)
         self.portsMenu.addAction(self.enumeratePortsAction)
         self.menuBar().addMenu(self.portsMenu)
 
@@ -176,11 +191,20 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
         self.helpMenu.addAction(self.aboutQtAction)
         self.menuBar().addMenu(self.helpMenu)
 
-    def _createDialogs(self):
-        self.dialogs = {'about': AboutDialog('A utility for creating and editing printer infos.')} # TODO: Handle getting opened as a dialog
+    def __createDialogs(self):
+        self.dialogs = {'about': AboutDialog(DESCRIPTION)}
 
-    def loadDefaults(self):
-        self.setPrinterInfo(PrinterInfo.PrinterInfo())
+    def updateConnectionMode(self):
+        self.specificStackedWidget.setCurrentIndex(self.connectionModeComboBox.currentIndex())
+        self.connectionStackedWidget.setCurrentIndex(self.connectionModeComboBox.currentIndex())
+
+    def enumeratePorts(self):
+        previous = self.portComboBox.currentText()
+
+        self.portComboBox.clear()
+        for serialPortInfo in QtSerialPort.QSerialPortInfo.availablePorts():
+            self.portComboBox.addItem(serialPortInfo.portName())
+        self.portComboBox.setCurrentText(previous)
 
     def saveAsFile(self):
         if len(self.displayNameLineEdit.text()) <= 0:
@@ -190,7 +214,7 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
         filePath = QtWidgets.QFileDialog.getSaveFileName(self,
                                                          'Select new printer info file',
                                                          None,
-                                                         PrinterInfo.PRINTER_INFO_FILE_FILTER)[0]
+                                                         PRINTER_INFO_FILE_FILTER)[0]
         if len(filePath) <= 0:
             return
         filePath = pathlib.Path(filePath)
@@ -198,22 +222,33 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
         with open(filePath, 'w', newline='') as file:
             json.dump(self.currentPrinterInfo().asJson(), file, indent=4)
 
+    def loadDefaults(self):
+        self.displayNameLineEdit.clear()
+
+        defaultMarlin2Connection = PrinterInfo.default(ConnectionMode.MARLIN_2).connection
+        self.marlin2ConnectionWidget.setBaudRate(defaultMarlin2Connection.baudRate)
+        self.marlin2ConnectionWidget.setDataBits(defaultMarlin2Connection.dataBits)
+        self.marlin2ConnectionWidget.setParity(defaultMarlin2Connection.parity)
+        self.marlin2ConnectionWidget.setStopBits(defaultMarlin2Connection.stopBits)
+        self.marlin2ConnectionWidget.setFlowControl(defaultMarlin2Connection.flowControl)
+        self.grid.clear()
+
     def openFile(self):
         filePath = QtWidgets.QFileDialog.getOpenFileName(self,
                                                          'Open printer info',
                                                          None,
-                                                         PrinterInfo.PRINTER_INFO_FILE_FILTER)[0]
+                                                         PRINTER_INFO_FILE_FILTER)[0]
         if len(filePath) > 0:
             self.loadPrinterInfo(filePath)
 
     def loadPrinterInfo(self, filePath):
-        printerInfo = PrinterInfo.PrinterInfo()
-        if filePath is not None:
-            printerInfo.load(filePath)
+        try:
+            self.setPrinterInfo(PrinterInfo.fromFile(filePath))
+        except(ValueError, IOError) as exception:
+            ErrorDialog(self, str(exception))
+            return
 
-        self.setPrinterInfo(printerInfo)
-
-    def setPrinterInfo(self, loadedPrinterInfo):
+    def setPrinterInfo(self, printerInfo):
         def setComboBox(comboBox, value):
             index = comboBox.findData(value)
             if value == -1:
@@ -221,58 +256,57 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
 
             comboBox.setCurrentIndex(index)
 
-        self.loadedPrinterInfo = loadedPrinterInfo
-
-        self.displayNameLineEdit.setText(self.loadedPrinterInfo.displayName)
-        setComboBox(self.gCodeFlavorComboBox, self.loadedPrinterInfo.connection.gCodeFlavor)
-        setComboBox(self.baudRateComboBox, self.loadedPrinterInfo.connection.baudRate)
-        setComboBox(self.dataBitsComboBox, self.loadedPrinterInfo.connection.dataBits)
-        setComboBox(self.parityComboBox, self.loadedPrinterInfo.connection.parity)
-        setComboBox(self.stopBitsComboBox, self.loadedPrinterInfo.connection.stopBits)
-        setComboBox(self.flowControlComboBox, self.loadedPrinterInfo.connection.flowControl)
-        self.columnCountSpinBox.setValue(self.loadedPrinterInfo.mesh.columnCount)
-        self.rowCountSpinBox.setValue(self.loadedPrinterInfo.mesh.rowCount)
+        self.displayNameLineEdit.setText(printerInfo.displayName)
+        self.marlin2ConnectionWidget.setBaudRate(printerInfo.connection.baudRate)
+        self.marlin2ConnectionWidget.setDataBits(printerInfo.connection.dataBits)
+        self.marlin2ConnectionWidget.setParity(printerInfo.connection.parity)
+        self.marlin2ConnectionWidget.setStopBits(printerInfo.connection.stopBits)
+        self.marlin2ConnectionWidget.setFlowControl(printerInfo.connection.flowControl)
 
         self.grid.clear()
-        for point in self.loadedPrinterInfo.manualProbePoints:
+        for point in printerInfo.manualProbePoints:
             self.grid.setPoint(point)
 
     def test(self):
-        testConnectionDialog = TestConnectionDialog(self.portComboBox.currentText(),
-                                                    self.currentPrinterInfo())
+        testConnectionDialog = TestConnectionDialog(host = self.hostLineEdit.text(),
+                                                    port = self.portComboBox.currentText(),
+                                                    printerInfo = self.currentPrinterInfo())
         testConnectionDialog.exec()
 
     def home(self):
-        dialog = PerformHomingDialog(self.portComboBox.currentText(),
-                                          self.currentPrinterInfo())
+        dialog = PerformHomingDialog(host = self.hostLineEdit.text(),
+                                     port = self.portComboBox.currentText(),
+                                     printerInfo = self.currentPrinterInfo())
         dialog.exec()
 
     def configureManualProbePoint(self, gridProbePoint):
-        dialog = ConfigureGridPointDialog(self.portComboBox.currentText(),
-                                          self.currentPrinterInfo(),
-                                          gridProbePoint)
+        dialog = ConfigureGridPointDialog(host = self.hostLineEdit.text(),
+                                          port = self.portComboBox.currentText(),
+                                          printerInfo = self.currentPrinterInfo(),
+                                          gridPoint = gridProbePoint)
         if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             self.grid.setPoint(dialog.point())
 
     def currentPrinterInfo(self):
-        return PrinterInfo.PrinterInfo(self.displayNameLineEdit.text(),
-                                       PrinterInfo.Connection(gCodeFlavor = self.gCodeFlavorComboBox.currentData(),
-                                                              baudRate = self.baudRateComboBox.currentData(),
-                                                              dataBits = self.dataBitsComboBox.currentData(),
-                                                              parity = self.parityComboBox.currentData(),
-                                                              stopBits = self.stopBitsComboBox.currentData(),
-                                                              flowControl = self.flowControlComboBox.currentData()),
-                                       PrinterInfo.Mesh(self.columnCountSpinBox.value(),
-                                                        self.rowCountSpinBox.value()),
-                                       self.grid.getPoints())
+        assert self.connectionModeComboBox.currentData() in [ConnectionMode.MARLIN_2, ConnectionMode.MOONRAKER]
+        if self.connectionModeComboBox.currentData() == ConnectionMode.MARLIN_2:
+            connection = Marlin2Connection(baudRate = self.marlin2ConnectionWidget.baudRate(),
+                                           dataBits = self.marlin2ConnectionWidget.dataBits(),
+                                           parity = self.marlin2ConnectionWidget.parity(),
+                                           stopBits = self.marlin2ConnectionWidget.stopBits(),
+                                           flowControl = self.marlin2ConnectionWidget.flowControl())
+        else:
+            connection = MoonrakerConnection()
+
+        return PrinterInfo._PrinterInfo(displayName = self.displayNameLineEdit.text(),
+                                        connectionMode = self.connectionModeComboBox.currentData(),
+                                        connection = connection,
+                                        manualProbePoints = self.grid.getPoints())
 
     def warning(self, message):
         QtWidgets.QMessageBox.warning(self, 'Warning', message)
 
 if __name__ == '__main__':
-    # Main only imports
-    import sys
-
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'PrinterInfoWizard-128x128.png').as_posix()))
     QtCore.QCoreApplication.setApplicationName('Printer Info Wizard')
@@ -286,7 +320,21 @@ if __name__ == '__main__':
     except ImportError:
         pass
 
-    printerInfoWizard = PrinterInfoWizard()
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument('-v', '--version', action='version', version=app.applicationVersion())
+    parser.add_argument('--log-level', choices=['all', 'debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
+    parser.add_argument('--log-console', action='store_true', help='log to the console')
+    parser.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
 
+    args = parser.parse_args()
+
+    # Configure logging
+    Common.configureLogging(level=args.log_level, console=args.log_console, file=args.log_file)
+
+    printerInfoWizard = PrinterInfoWizard()
     printerInfoWizard.show()
-    sys.exit(app.exec())
+
+    try:
+       sys.exit(app.exec())
+    except KeyboardInterrupt:
+        sys.exit(1)

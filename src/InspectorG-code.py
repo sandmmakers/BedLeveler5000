@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 
-import Common
+from Common import Common
 from Dialogs.AboutDialog import AboutDialog
 from Dialogs.WarningDialog import WarningDialog
 from Dialogs.ErrorDialog import ErrorDialog
 from Dialogs.FatalErrorDialog import FatalErrorDialog
-from LineConnection import LineConnection
-from PrinterInfo import PrinterInfo
-from PortComboBox import PortComboBox
-import Version
+from Printers.Marlin2.Marlin2LinePrinter import Marlin2LinePrinter
+from Printers.Moonraker.MoonrakerLinePrinter import MoonrakerLinePrinter
+from Common import PrinterInfo
+from Widgets.PrinterConnectWidget import PrinterConnectWidget
+from Common.PrinterInfo import ConnectionMode
+from Common import Version
 from PySide6 import QtCore
 from PySide6 import QtGui
 from PySide6 import QtWidgets
@@ -17,73 +19,40 @@ import argparse
 import json
 import logging
 import pathlib
+import signal
 import sys
 
+# Enable CTRL-C killing the application
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+DESCRIPTION = 'A simple G-code testing utility.'
+
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, *args, printersDir, printer=None, port=None, **kwargs):
+    def __init__(self, printersDir, *args, printer=None, host=None, port=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle(QtCore.QCoreApplication.applicationName())
         self.logger = logging.getLogger(QtCore.QCoreApplication.applicationName())
-
-        self.connection = LineConnection()
-        self.connection.received.connect(self._logLine)
 
         self._createWidgets()
         self._layoutWidgets()
         self._createMenus()
         self._createDialogs()
 
-        self.printersDir = printersDir
-        self.loadPrinters(printer)
-
-        if port is not None:
-            try:
-                self.portCombBox.setPort(port)
-            except ValueError as exception:
-                self._warning(exception)
+        self.printer = None
+        self.printerQtConnections = []
+        self.printerConnectWidget.loadPrinters(printersDir,
+                                               desiredPrinter = printer,
+                                               desiredHost = host,
+                                               desiredPort = port)
 
         self._updateState()
 
-    def loadPrinters(self, desiredPrinter=None):
-        self.printerComboBox.blockSignals(True)
-
-        self.printerComboBox.clear()
-
-        for filePath in self.printersDir.glob('**/*.json'):
-            printerInfo = PrinterInfo.fromFile(filePath)
-            self.printerComboBox.addItem(printerInfo.displayName, printerInfo)
-
-        if self.printerComboBox.count() <= 0:
-            self._fatalError('No printers found.')
-
-        self.printerComboBox.blockSignals(False)
-
-        index = 0 if desiredPrinter is None else self.printerComboBox.findText(desiredPrinter)
-        if index == -1:
-            self._warning('Failed to find requested printer.')
-        else:
-            self.printerComboBox.setCurrentIndex(index)
-
-        # Ensure switchPrinter always gets called
-        if index == 0:
-            self.switchPrinter()
-
-    def switchPrinter(self):
-        try:
-            self.printerInfo = self.printerComboBox.currentData()
-            self.connection.setPrinter(self.printerInfo)
-
-        except ValueError as valueError:
-            self._fatalError(valueError.args[0])
-
     def _createWidgets(self):
-        # Connection widgets
-        self.printerComboBox = QtWidgets.QComboBox()
-        self.printerComboBox.currentIndexChanged.connect(self.switchPrinter)
-
-        self.portComboBox = PortComboBox()
-        self.connectButton = QtWidgets.QPushButton()
+        # Printer connect widget
+        self.printerConnectWidget = PrinterConnectWidget(hasHomeButton=False)
+        self.printerConnectWidget.connectRequested.connect(self.connectToPrinter)
+        self.printerConnectWidget.disconnectRequested.connect(self.disconnectFromPrinter)
 
         self.commandLineEdit = QtWidgets.QLineEdit()
         self.commandLineEdit.textChanged.connect(self._updateState)
@@ -98,20 +67,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.logTextEdit.document().setDefaultFont(font)
 
         self.clearButton = QtWidgets.QPushButton('Clear')
-        self.clearButton.clicked.connect(lambda : self.logTextEdit.clear())
+        self.clearButton.clicked.connect(self.logTextEdit.clear)
 
     def _layoutWidgets(self):
-        # Connection layout
-        connectionLayout = QtWidgets.QHBoxLayout()
-        connectionLayout.addWidget(QtWidgets.QLabel('Printer:'))
-        connectionLayout.addWidget(self.printerComboBox)
-        connectionLayout.addWidget(QtWidgets.QLabel('Port:'))
-        connectionLayout.addWidget(self.portComboBox)
-        connectionLayout.addWidget(self.connectButton)
-        connectionLayout.addStretch()
-        connectionGroupBox = QtWidgets.QGroupBox('Connection')
-        connectionGroupBox.setLayout(connectionLayout)
-
         # Command layout
         commandLayout = QtWidgets.QHBoxLayout()
         commandLayout.addWidget(QtWidgets.QLabel('Command:'))
@@ -125,7 +83,7 @@ class MainWindow(QtWidgets.QMainWindow):
         clearLayout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(connectionGroupBox)
+        layout.addWidget(self.printerConnectWidget)
         layout.addLayout(commandLayout)
         layout.addWidget(self.logTextEdit)
         layout.addLayout(clearLayout)
@@ -147,7 +105,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.portsMenu = QtWidgets.QMenu('Ports', self)
         self.enumeratePortsAction = QtGui.QAction('Enumerate', self)
         self.enumeratePortsAction.setStatusTip('Reenumerate COM ports')
-        self.enumeratePortsAction.triggered.connect(self.portComboBox.enumeratePorts)
+        self.enumeratePortsAction.triggered.connect(self.printerConnectWidget.enumeratePorts)
         self.portsMenu.addAction(self.enumeratePortsAction)
         self.menuBar().addMenu(self.portsMenu)
 
@@ -156,7 +114,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.helpMenu = QtWidgets.QMenu('Help', self)
         self.aboutAction = QtGui.QAction('About', self)
-        self.aboutAction.triggered.connect(lambda : self.dialogs['about'].exec())
+        self.aboutAction.triggered.connect(lambda : AboutDialog(DESCRIPTION).exec())
         self.helpMenu.addAction(self.aboutAction)
         self.aboutQtAction = QtGui.QAction('About Qt', self)
         self.aboutQtAction.triggered.connect(qApp.aboutQt)
@@ -167,41 +125,57 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar()
 
     def _createDialogs(self):
-        self.dialogs = {'about': AboutDialog('A simple G-code testing utility.')}
+        self.dialogs = {'about': AboutDialog(DESCRIPTION)}
 
     def _updateState(self):
-        self.printerComboBox.setEnabled(not self.connection.connected())
-        self.portComboBox.setEnabled(not self.connection.connected())
-        self.enumeratePortsAction.setEnabled(not self.connection.connected())
-        self.sendCommandButton.setEnabled(self.connection.connected() and len(self.commandLineEdit.text()) > 0)
+        connected = self.printer is not None and self.printer.connected()
 
-        QtCore.QObject.disconnect(self.connectButton, None, None, None)
-        if not self.connection.connected():
-            self.connectButton.setText('Connect')
-            self.connectButton.clicked.connect(lambda x: self._openSerialPort(self.portComboBox.currentText()))
+        if not connected:
+            self.printerConnectWidget.setDisconnected()
             self.statusBar().showMessage('Disconnected')
         else:
-            self.connectButton.setText('Disconnect')
-            self.connectButton.clicked.connect(self._closeSerialPort)
+            self.printerConnectWidget.setConnected()
             self.statusBar().showMessage('Connected')
 
-    def _openSerialPort(self, portName):
-        try:
-            # Open serial port
-            self.connection.open(portName)
-        except IOError as exception:
-            self._error(exception.args[1])
+        self.enumeratePortsAction.setEnabled(not connected)
+        self.sendCommandButton.setEnabled(connected and len(self.commandLineEdit.text()) > 0)
 
+    def connectToPrinter(self):
+        # Create the printer and determine open arguments
+        assert self.printerConnectWidget.connectionMode() in [ConnectionMode.MARLIN_2, ConnectionMode.MOONRAKER]
+        if self.printerConnectWidget.connectionMode() == ConnectionMode.MARLIN_2:
+            self.printer = Marlin2LinePrinter(printerInfo = self.printerConnectWidget.printerInfo(),
+                                              port = self.printerConnectWidget.port(),
+                                              parent = self)
+        elif self.printerConnectWidget.connectionMode() == ConnectionMode.MOONRAKER:
+            self.printer = MoonrakerLinePrinter(printerInfo = self.printerConnectWidget.printerInfo(),
+                                                host = self.printerConnectWidget.host(),
+                                                parent = self)
+
+        self.printerQtConnections.append(self.printer.sent.connect(self._logCommand))
+        self.printerQtConnections.append(self.printer.received.connect(self._logLine))
+        #self.printerQtConnections.append(self.printer.errorOccured.connect(self.logError))
+
+        self.printer.open()
         self._updateState()
 
-    def _closeSerialPort(self):
-        self.connection.close()
+    def disconnectFromPrinter(self):
+        self.printer.close()
+
+        # Break connections
+        for qtConnection in self.printerQtConnections:
+            self.printer.disconnect(qtConnection)
+        self.printerQtConnections = []
+
+        self.printer = None
         self._updateState()
 
     def sendCommand(self, command):
-        assert(self.connection.connected())
+        assert(self.printer.connected())
+        self.printer.sendCommand(command)
+
+    def _logCommand(self, command):
         self.logTextEdit.append(f'SENT: \'{command}\'')
-        self.connection.sendCommand(command)
 
     def _logLine(self, line):
         self.logTextEdit.append(f'RECV: \'{line}\'')
@@ -227,9 +201,8 @@ class MainWindow(QtWidgets.QMainWindow):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'InspectorG-code_Icon_128x128.png').as_posix()))
-
-    QtCore.QCoreApplication.setApplicationName('Inspector G-code')
-    QtCore.QCoreApplication.setApplicationVersion(Version.version())
+    app.setApplicationName('Inspector G-code')
+    app.setApplicationVersion(Version.version())
 
     # Windows only, configure icon settings
     try:
@@ -240,14 +213,18 @@ if __name__ == '__main__':
         pass
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Utility for testing G-code')
-    parser.add_argument('-v', '--version', action='version', version=QtCore.QCoreApplication.applicationVersion())
+    parser = argparse.ArgumentParser(description=DESCRIPTION)
+    parser.add_argument('-v', '--version', action='version', version=app.applicationVersion())
     parser.add_argument('--printers-dir', default=Common.baseDir() / 'Printers', type=pathlib.Path, help='printer information directory')
     parser.add_argument('--printer', default=None, help='printer to use')
-    parser.add_argument('--port', default=None, help='port to use')
-    parser.add_argument('--log_level', choices=['debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
-    parser.add_argument('--log_console', action='store_true', help='log to the console')
-    parser.add_argument('--log_file', type=pathlib.Path, default=None, help='log file')
+
+    printerSpecificGroup = parser.add_mutually_exclusive_group()
+    printerSpecificGroup.add_argument('--port', default=None, help='port to use for Marlin2 connection')
+    printerSpecificGroup.add_argument('--host', default=None, help='host to use for Moonraker connection')
+
+    parser.add_argument('--log-level', choices=['all', 'debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
+    parser.add_argument('--log-console', action='store_true', help='log to the console')
+    parser.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
 
     args = parser.parse_args()
 
@@ -258,6 +235,14 @@ if __name__ == '__main__':
     if args.printers_dir is not None and not args.printers_dir.exists():
         FatalErrorDialog(None, f'Failed to find printer directory: {args.printers_dir}.')
 
-    mainWindow = MainWindow(printersDir=args.printers_dir, printer=args.printer, port=args.port)
-    mainWindow.show()
-    app.exec()
+    try:
+        mainWindow = MainWindow(printersDir=args.printers_dir,
+                                printer=args.printer,
+                                host=args.host,
+                                port=args.port)
+        mainWindow.show()
+        sys.exit(app.exec())
+    except KeyboardInterrupt:
+        sys.exit(1)
+    except Exception as exception:
+        FatalErrorDialog(None, str(exception))
