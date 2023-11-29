@@ -171,6 +171,6 @@ if __name__ == '__main__':
     print(default(ConnectionMode.MARLIN_2).asJson())
     print(default(ConnectionMode.MOONRAKER).asJson())
 
-    testFile(Common.baseDir() / 'Printers' / 'ElegooNeptune3Plus.json')
-    testFile(Common.baseDir() / 'Printers' / 'ElegooNeptune3Max.json')
-    testFile(Common.baseDir() / 'Printers' / 'ElegooNeptune4Max.json')
+    testFile(Common.printersDir() / 'ElegooNeptune3Plus.json')
+    testFile(Common.printersDir() / 'ElegooNeptune3Max.json')
+    testFile(Common.printersDir() / 'ElegooNeptune4Max.json')

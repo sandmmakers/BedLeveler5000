@@ -674,7 +674,7 @@ if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Test app for CommandConnection')
     parser.add_argument('-v', '--version', action='version', version=app.applicationVersion())
-    parser.add_argument('--printers-dir', default=Common.baseDir() / 'Printers', type=pathlib.Path, help='printer information directory')
+    parser.add_argument('--printers-dir', default=Common.printersDir(), type=pathlib.Path, help='printer information directory')
     parser.add_argument('--printer', default=None, help='printer to use')
 
     # port AND host require --printer to be used

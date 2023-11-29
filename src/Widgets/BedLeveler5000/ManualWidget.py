@@ -57,7 +57,7 @@ if __name__ == '__main__':
         manualWidget.reportProbe(id_, ProbeResult(x=x, y=y, z=0.02))
 
     # Read in the test printer description
-    printerInfo = PrinterInfo.fromFile(Common.baseDir() / 'Printers/ElegooNeptune3Max.json')
+    printerInfo = PrinterInfo.fromFile(Common.printersDir() / 'ElegooNeptune3Max.json')
 
     app = QtWidgets.QApplication(sys.argv)
     widget = QtWidgets.QWidget()

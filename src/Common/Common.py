@@ -9,6 +9,10 @@ LOG_NONE = 99
 def baseDir():
     return pathlib.Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else pathlib.Path(__file__).parent.parent.parent
 
+def printersDir():
+    parentDir = pathlib.Path(sys.executable).parent if getattr(sys, 'frozen', False) else baseDir()
+    return parentDir / 'Printers'
+
 def configureLogging(level=None, console=False, file=None):
     LOGGING_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 

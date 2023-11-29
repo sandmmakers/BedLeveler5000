@@ -42,8 +42,8 @@ if __name__ == '__main__':
     import sys
 
     # Read in the test printer descriptions
-    printer1 = PrinterInfo.fromFile(Common.baseDir() / 'Printers/ElegooNeptune3Plus.json')
-    printer2 = PrinterInfo.fromFile(Common.baseDir() / 'Printers/ElegooNeptune3Max.json')
+    printer1 = PrinterInfo.fromFile(Common.printersDir() / 'ElegooNeptune3Plus.json')
+    printer2 = PrinterInfo.fromFile(Common.printersDir() / 'ElegooNeptune3Max.json')
 
     app = QtWidgets.QApplication(sys.argv)
     widget = QtWidgets.QWidget()

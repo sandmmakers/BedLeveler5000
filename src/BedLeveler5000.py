@@ -387,7 +387,7 @@ if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser(description=DESCRIPTION)
     parser.add_argument('-v', '--version', action='version', version=app.applicationVersion())
-    parser.add_argument('--printers-dir', default=Common.baseDir() / 'Printers', type=pathlib.Path, help='printer information directory')
+    parser.add_argument('--printers-dir', default=Common.printersDir(), type=pathlib.Path, help='printer information directory')
     parser.add_argument('--printer', default=None, help='printer to use')
     parser.add_argument('--no-temperature-reporting', action='store_true', help='disable temperature reporting')
 

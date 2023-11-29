@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from Common.Common import baseDir
+from Common.Common import printersDir
 from Common import PrinterInfo
 from Common.PrinterInfo import ConnectionMode
 from PySide6 import QtCore
@@ -296,13 +296,13 @@ if __name__ == '__main__':
             self.withHomePrinterConnectWidget.printerChanged.connect(lambda: print('withHomePrinterConnectWidget.printerChanged'))
             self.withHomePrinterConnectWidget.connectRequested.connect(self.withHomePrinterConnectWidget.setBusy)
             self.withHomePrinterConnectWidget.disconnectRequested.connect(self.withHomePrinterConnectWidget.setDisconnected)
-            self.withHomePrinterConnectWidget.loadPrinters(baseDir() / 'Printers')
+            self.withHomePrinterConnectWidget.loadPrinters(printersDir())
 
             self.withoutHomePrinterConnectWidget = PrinterConnectWidget()
             self.withoutHomePrinterConnectWidget.printerChanged.connect(lambda: print('withoutHomePrinterConnectWidget.printerChanged'))
             self.withoutHomePrinterConnectWidget.connectRequested.connect(self.withoutHomePrinterConnectWidget.setBusy)
             self.withoutHomePrinterConnectWidget.disconnectRequested.connect(self.withoutHomePrinterConnectWidget.setDisconnected)
-            self.withoutHomePrinterConnectWidget.loadPrinters(baseDir() / 'Printers')
+            self.withoutHomePrinterConnectWidget.loadPrinters(printersDir())
 
             self.connectedButton = QtWidgets.QPushButton('Connected')
             self.connectedButton.clicked.connect(self.connected)

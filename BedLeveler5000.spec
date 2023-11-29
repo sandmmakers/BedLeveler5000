@@ -178,3 +178,11 @@ coll = COLLECT(
     upx_exclude=[],
     name='BedLeveler5000',
 )
+
+# Move Printers directory to the top-level
+import pathlib
+import shutil
+topLevelDir = pathlib.Path(DISTPATH) / specnm
+internalDir = topLevelDir / '_internal'
+if internalDir.exists():
+    shutil.move(internalDir / 'Printers', topLevelDir)
