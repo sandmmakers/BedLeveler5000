@@ -284,10 +284,10 @@ class GetProbeOffsetsMachine(MoonrakerMachine):
 
     def start(self):
         self.setTransition(self._enterDone)
-        self.get('/printer/objects/query?probe')
+        self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        probe = replyJson['status']['probe']
+        probe = replyJson['status']['configfile']['config']['probe']
 
         result = GetProbeOffsetsResult(xOffset = float(probe['x_offset']),
                                        yOffset = float(probe['y_offset']),
@@ -441,11 +441,11 @@ class ProbeMachine(MoonrakerMachine):
 
     def start(self):
         self.setTransition(self._enterRaise)
-        self.get('/printer/objects/query?probe')
+        self.get('/printer/objects/query?configfile')
 
     def _enterRaise(self, replyJson):
         try:
-            probe = replyJson['status']['probe']
+            probe = replyJson['status']['configfile']['config']['probe']
             self.xOffset = float(probe['x_offset'])
             self.yOffset = float(probe['y_offset'])
         except:
