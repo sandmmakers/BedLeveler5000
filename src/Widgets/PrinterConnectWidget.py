@@ -132,7 +132,7 @@ class PrinterConnectWidget(QtWidgets.QWidget):
         """ Calls enumeratePorts."""
 
         # Verify argument requirements
-        assert(desiredPrinter is not None or (desiredPort is None and desiredHost is None))
+        assert (desiredPrinter is not None) or (desiredPort is None and desiredHost is None)
 
         # Verify there are no connected printers
         assert(self.printerComboBox.isEnabled())
