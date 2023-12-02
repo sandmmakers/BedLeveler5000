@@ -3,6 +3,19 @@ import functools
 import logging
 import types
 
+def toArgumentString(args, kwargs):
+    arguments = ''
+
+    if len(args) > 0:
+        arguments = ', '.join(f'{v}' for v in args)
+
+    if len(kwargs) > 0:
+        if len(arguments) > 0:
+            arguments += ', '
+        arguments += ", ".join(f'{k}={v}' for k, v in kwargs.items())
+
+    return arguments
+
 def loggedFunction(helper=None, level=logging.INFO):
     assert callable(helper) or helper is None
     if level is None:
@@ -16,18 +29,9 @@ def loggedFunction(helper=None, level=logging.INFO):
         def logFunction(*args, **kwargs):
             className, dot, functionName = function.__qualname__.rpartition('.')
             logger = logging.getLogger(className)
-            arguments = ''
-
-            if len(args) > 0:
-                argsStart = 0 if isinstance(function, types.FunctionType) == 0 else 1
-                arguments = ', '.join(f'{v}' for v in args[argsStart:])
-
-            if len(kwargs) > 0:
-                if len(arguments) > 0:
-                    arguments += ', '
-                arguments += ", ".join(f'{k}={v}' for k, v in kwargs.items())
-
-            logger.log(level, f'{functionName}({arguments})')
+            argsStart = 0 if isinstance(function, types.FunctionType) == 0 else 1
+            argumentString = toArgumentString(args[argsStart:], kwargs)
+            logger.log(level, f'{functionName}({argumentString})')
             return function(*args, **kwargs)
         return logFunction
     return wrap(helper) if callable(helper) else wrap
