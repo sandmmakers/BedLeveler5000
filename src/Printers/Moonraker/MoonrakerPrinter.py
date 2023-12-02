@@ -46,6 +46,8 @@ class MoonrakerPrinter(CommandPrinter):
         machineSignal = getattr(machine, signalName)
         machineSignal.connect(getattr(self, signalName))
         self.machineSet.add(machine)
+
+        logging.debug(f'Starting {machineClass} with id: {id_}, context: {context}')
         machine.start()
 
     def _init(self, id_, *, context):
@@ -163,17 +165,35 @@ class MoonrakerMachine(QtCore.QObject):
         self.reply.deleteLater()
         self.reply = None
 
+        # Check for protocol error
+        if 'error' in replyJson and 'message' in replyJson['error']:
+            message = replyJson['error']['message']
+            self.error = message
+            logging.error(f'Error {replyJson}')
+            self.errorOccurred.emit(self, message)
+            self.finished.emit(self, message)
+
         # Handle REST errors
-        if errorStatus != QtNetwork.QNetworkReply.NoError:
-            self.errorOccurred.emit(self, 'Rest error occured.')
+        elif errorStatus != QtNetwork.QNetworkReply.NoError:
+            message = f'Rest error occured ({errorStatus}).'
+            logging.error(message)
+            self.errorOccurred.emit(self, message)
             return
 
-        # Check for protocol error
-        elif 'error' in replyJson:
-            self.errorOccured.emit(self.NAME, self.id_, self.context, replyJson['error'])
-
         else: # Move to next state
-            self._transition(replyJson['result'])
+            logging.debug(f'Entering {self._transition.__qualname__}' \
+                          f' Id: {self.id_}' \
+                          f' Context: {self.context}' \
+                          f' Reply: {replyJson}')
+
+            try:
+                self._transition(replyJson['result'])
+            except ValueError as exception:
+                message = str(exception)
+                self.error = message
+                logging.error(message)
+                self.errorOccurred.emit(self, message)
+                self.finished.emit(self, message)
 
     def finish(self, signal, result=None):
         if result is None:
@@ -182,10 +202,42 @@ class MoonrakerMachine(QtCore.QObject):
             signal.emit(self.id_, self.context, result)
         self.finished.emit(self, result)
 
-    def reportError(self, message):
-        self.error = message
-        self.errorOccurred.emit(self, message)
-        self.finished.emit(self, message)
+    @staticmethod
+    def _fieldsToString(fieldList):
+        return '[\'' + '\'][\''.join(fieldList) + '\']'
+
+    @classmethod
+    def _getField(cls, input_, fieldList, type_=None):
+        foundFieldList = []
+        result = input_
+
+        for field in fieldList:
+            foundFieldList.append(field)
+            result = result.get(field)
+            if result is None:
+                fields = cls._fieldsToString(foundFieldList)
+                raise ValueError(f'Failed to find field: {fields}.')
+
+        if type_ is None:
+            return result
+
+        try:
+            return type_(result)
+        except Exception as exception:
+            fieldsString = cls._fieldsToString(foundFieldList)
+            raise ValueError(f'Falied to convert {fieldsString} to {type_.__qualname__}.')
+
+    @staticmethod
+    def _safeConvert(type_, value):
+        try:
+            return type_(value)
+        except:
+            return None
+
+    @staticmethod
+    def _verifyOk(reply, message):
+        if reply != 'ok':
+            raise ValueError(message)
 
 class InitMachine(MoonrakerMachine):
     TYPE = CommandType.INIT
@@ -203,25 +255,55 @@ class InitMachine(MoonrakerMachine):
         self.getGCode('G28')
 
     def _enterGetConfigFile(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Init (home) failed.')
-        else:
-            self.setTransition(self._enterDone)
-            self.get('/printer/objects/query?configfile')
+        self._verifyOk(replyJson, 'Homing failed during initialization.')
+        self.setTransition(self._enterDone)
+        self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        try:
-            config = replyJson['status']['configfile']['config']
-            probe = config['probe']
-            bedMesh = config['bed_mesh']
+        configPath = ['status', 'configfile', 'config']
+        probePath = configPath + ['probe']
+        bedMeshPath = configPath + ['bed_mesh']
 
-            self.probeSampleCount = int(probe['samples'])
-            self.probeZHeight = float(bedMesh['horizontal_move_z']) + 10
-            self.probeXYSpeed = float(bedMesh['speed'])
-        except Exception:
-            self.reportError('Init (configfile) failed.')
-        else:
-            self.finish(self.inited)
+        # Get config
+        config = self._getField(replyJson, configPath)
+
+        # Get probe
+        probe = config.get(probePath[-1])
+        if probe is None:
+            raise ValueError('Init failed, \'probe\' section not found in \'printer.cfg\'.')
+
+        # Get bed mesh
+        bedMesh = config.get(bedMeshPath[-1])
+        if bedMesh is None:
+            raise ValueError('Init failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
+
+        # Get probe sample count
+        self.probeSampleCount = probe.get('samples')
+        if self.probeSampleCount is None:
+            raise ValueError('Init failed, \'samples\' field not found in \'probe\' section of \'printer.cfg\'.')
+        self.probeSampleCount = self._safeConvert(int, self.probeSampleCount)
+        if self.probeSampleCount is None:
+            raise ValueError('Init failed, invalid value for \'probe:samples\' field in \'printer.cfg\'.')
+
+        # Get probe z-height
+        self.probeZHeight = bedMesh.get('horizontal_move_z')
+        if self.probeZHeight is None:
+            raise ValueError('Init failed, \'horizontal_move_z\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
+        self.probeZHeight = self._safeConvert(float, self.probeZHeight)
+        if self.probeZHeight is None:
+            raise ValueError('Init failed, invalid value for \'bed_mesh:horizontal_move_z\' field in \'printer.cfg\'.')
+        self.probeZHeight += 10.0 # Add 10.0 for safety
+
+        # Get probe XY speed
+        self.probeXYSpeed = bedMesh.get('speed')
+        if self.probeXYSpeed is None:
+            raise ValueError('Init failed, \'speed\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
+        self.probeXYSpeed = self._safeConvert(float, self.probeXYSpeed)
+        if self.probeXYSpeed is None:
+            raise ValueError('Init failed, invalid value for \'bed_mesh:speed\' field in \'printer.cfg\'.')
+
+        # Done
+        self.finish(self.inited)
 
 class HomeMachine(MoonrakerMachine):
     TYPE = CommandType.HOME
@@ -247,10 +329,8 @@ class HomeMachine(MoonrakerMachine):
         self.getGCode('G28' + parts)
 
     def _enterDone(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Home failed.')
-        else:
-            self.finish(self.homed)
+        self._verifyOk(replyJson, 'Homing failed.')
+        self.finish(self.homed)
 
 class GetTemperaturesMachine(MoonrakerMachine):
     TYPE = CommandType.GET_TEMPERATURES
@@ -264,14 +344,14 @@ class GetTemperaturesMachine(MoonrakerMachine):
         self.get('/printer/objects/query?heater_bed&extruder')
 
     def _enterDone(self, replyJson):
-        tool = replyJson['status']['extruder']
-        bed = replyJson['status']['heater_bed']
-        result = GetTemperaturesResult(toolActual = float(tool['temperature']),
-                                       toolDesired = float(tool['target']),
-                                       toolPower = float(tool['power']),
-                                       bedActual = float(bed['temperature']),
-                                       bedDesired = float(bed['target']),
-                                       bedPower = float(bed['power']))
+        extruderPath = ['status', 'extruder']
+        heaterBedPath = ['status', 'heater_bed']
+        result = GetTemperaturesResult(toolActual = self._getField(replyJson, extruderPath + ['temperature'], type_=float),
+                                       toolDesired = self._getField(replyJson, extruderPath + ['target'], type_=float),
+                                       toolPower = self._getField(replyJson, extruderPath + ['power'], type_=float),
+                                       bedActual = self._getField(replyJson, heaterBedPath + ['temperature'], type_=float),
+                                       bedDesired = self._getField(replyJson, heaterBedPath + ['target'], type_=float),
+                                       bedPower = self._getField(replyJson, heaterBedPath + ['power'], type_=float))
 
         self.finish(self.gotTemperatures, result)
 
@@ -287,13 +367,38 @@ class GetProbeOffsetsMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        probe = replyJson['status']['configfile']['config']['probe']
+        configPath = ['status', 'configfile', 'config']
+        probePath = configPath + ['probe']
 
-        result = GetProbeOffsetsResult(xOffset = float(probe['x_offset']),
-                                       yOffset = float(probe['y_offset']),
-                                       zOffset = float(probe['z_offset']))
+        # Get probe
+        config = self._getField(replyJson, configPath)
+        probe = config.get(probePath[-1])
+        if probe is None:
+            raise ValueError('Get probe offsets failed, \'probe\' section not found in \'printer.cfg\'.')
 
-        self.finish(self.gotProbeOffsets, result)
+        # Get X offset (not required)
+        xOffset = self._safeConvert(float, probe.get('x_offset', 0.0))
+        if xOffset is None:
+            raise ValueError('Get probe offsets failed, invalid value for \'probe:x_offset\' field in \'printer.cfg\'.')
+
+        # Get Y offset (not required)
+        yOffset = self._safeConvert(float, probe.get('y_offset', 0.0))
+        if yOffset is None:
+            raise ValueError('Get probe offsets failed, invalid value for \'probe:y_offset\' field in \'printer.cfg\'.')
+
+        # Get Z offset (required)
+        zOffset = probe.get('z_offset')
+        if zOffset is None:
+            raise ValueError('Get probe offsets failed, \'z_offset\' field not found in \'probe\' section of \'printer.cfg\'.')
+        zOffset = self._safeConvert(float, zOffset)
+        if zOffset is None:
+            raise ValueError('Get probe offsets failed, invalid value for \'probe:z_offset\' field in \'printer.cfg\'.')
+
+        # Finish
+        self.finish(self.gotProbeOffsets,
+                    GetProbeOffsetsResult(xOffset = xOffset,
+                                          yOffset = yOffset,
+                                          zOffset = zOffset))
 
 class GetCurrentPositionMachine(MoonrakerMachine):
     TYPE = CommandType.GET_CURRENT_POSITION
@@ -307,14 +412,28 @@ class GetCurrentPositionMachine(MoonrakerMachine):
         self.get('/printer/objects/query?gcode_move')
 
     def _enterDone(self, replyJson):
-        position = replyJson['status']['gcode_move']['gcode_position']
+        positionPath = ['status', 'gcode_move', 'gcode_position']
+        positionLength = 4
+        position = self._getField(replyJson, positionPath)
+        names = ['X', 'Y', 'Z', 'E']
+        values = [None] * positionLength
 
-        result = GetCurrentPositionResult(x = float(position[0]),
-                                          y = float(position[1]),
-                                          z = float(position[2]),
-                                          e = float(position[3]))
+        # Verify position length
+        if len(position) != positionLength:
+            raise ValueError(f'Get current position failed, {self._fieldsToString(positionPath)} has the wrong number of values.' \
+                             f' Found {len(position)} but expected {positionLength}.')
 
-        self.finish(self.gotCurrentPosition, result)
+        # Convert each value
+        for index in range(len(names)):
+            values[index] = self._safeConvert(float, position[index])
+            if values[index] is None:
+                raise ValueError(f'Get current position failed, invalid value found for the {names[index]}-axis.')
+
+        self.finish(self.gotCurrentPosition,
+                    GetCurrentPositionResult(x = values[0],
+                                             y = values[1],
+                                             z = values[2],
+                                             e = values[3]))
 
 class GetMeshCoordinatesMachine(MoonrakerMachine):
     TYPE = CommandType.GET_MESH_COORDINATES
@@ -328,16 +447,30 @@ class GetMeshCoordinatesMachine(MoonrakerMachine):
         self.get('/printer/objects/query?bed_mesh')
 
     def _enterDone(self, replyJson):
-        bed_mesh = replyJson['status']['bed_mesh']
-        profile_name = bed_mesh['profile_name']
-        profile = bed_mesh['profiles'][profile_name]['mesh_params']
+        profilesPath = ['status', 'bed_mesh', 'profiles']
 
-        self.finish(self.gotMeshCoordinates, CommandPrinter.calculateMeshCoordinates(rowCount = int(profile['y_count']),
-                                                                                     columnCount = int(profile['x_count']),
-                                                                                     minX = float(profile['min_x']),
-                                                                                     maxX = float(profile['max_x']),
-                                                                                     minY = float(profile['min_y']),
-                                                                                     maxY = float(profile['max_y'])))
+        # Get profiles
+        profiles = self._getField(replyJson, profilesPath)
+
+        # Get loaded profile name
+        profileName = self._getField(replyJson, ['status', 'bed_mesh', 'profile_name'])
+        if len(profileName) == 0:
+            raise ValueError(f'Get mesh coordinates failed, no mesh profile loaded. A loaded mesh profile is required.')
+
+        # Get the loaded profile
+        profile = profiles.get(profileName)
+        if profile is None:
+            raise ValueError('Get mesh coordinates failed, loaded mesh not found.')
+
+        # Get mesh params
+        meshParamsPath = profilesPath + [profileName, 'mesh_params']
+        self.finish(self.gotMeshCoordinates,
+                    CommandPrinter.calculateMeshCoordinates(rowCount = self._getField(replyJson, meshParamsPath + ['y_count'], type_=int),
+                                                            columnCount = self._getField(replyJson, meshParamsPath + ['x_count'], type_=int),
+                                                            minX = self._getField(replyJson, meshParamsPath + ['min_x'], type_=float),
+                                                            maxX = self._getField(replyJson, meshParamsPath + ['max_x'], type_=float),
+                                                            minY = self._getField(replyJson, meshParamsPath + ['min_y'], type_=float),
+                                                            maxY = self._getField(replyJson, meshParamsPath + ['max_y'], type_=float)))
 
 class SetBedTemperatureMachine(MoonrakerMachine):
     TYPE = CommandType.SET_BED_TEMPERATURE
@@ -352,10 +485,8 @@ class SetBedTemperatureMachine(MoonrakerMachine):
         self.getGCode(f'M140 S{self.temp}')
 
     def _enterDone(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Set bed temperature failed.')
-        else:
-            self.finish(self.bedTemperatureSet)
+        self._verifyOk(replyJson, 'Set bed temperature failed.')
+        self.finish(self.bedTemperatureSet)
 
 class SetNozzleTemperatureMachine(MoonrakerMachine):
     TYPE = CommandType.SET_NOZZLE_TEMPERATURE
@@ -370,10 +501,8 @@ class SetNozzleTemperatureMachine(MoonrakerMachine):
         self.getGCode(f'M104 S{self.temp}')
 
     def _enterDone(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Set nozzle temperature failed.')
-        else:
-            self.finish(self.nozzleTemperatureSet)
+        self._verifyOk(replyJson, 'Set nozzle temperature failed.')
+        self.finish(self.nozzleTemperatureSet)
 
 class GetDefaultProbeSampleCountMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_SAMPLE_COUNT
@@ -387,8 +516,24 @@ class GetDefaultProbeSampleCountMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        probe = replyJson['status']['configfile']['config']['probe']
-        self.finish(self.gotDefaultProbeSampleCount, int(probe['samples']))
+        configPath = ['status', 'configfile', 'config']
+        probePath = configPath + ['probe']
+
+        # Get probe
+        config = self._getField(replyJson, configPath)
+        probe = config.get(probePath[-1])
+        if probe is None:
+            raise ValueError('Get default probe sample count failed, \'probe\' section not found in \'printer.cfg\'.')
+
+        # Get probe sample count
+        probeSampleCount = probe.get('samples')
+        if probeSampleCount is None:
+            raise ValueError('Get default probe sample count failed, \'samples\' field not found in \'probe\' section of \'printer.cfg\'.')
+        probeSampleCount = self._safeConvert(int, probeSampleCount)
+        if probeSampleCount is None:
+            raise ValueError('Get default probe sample count failed, invalid value for \'probe:samples\' field in \'printer.cfg\'.')
+
+        self.finish(self.gotDefaultProbeSampleCount, probeSampleCount)
 
 class GetDefaultProbeZHeightMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_Z_HEIGHT
@@ -402,8 +547,24 @@ class GetDefaultProbeZHeightMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        bedMesh = replyJson['status']['configfile']['config']['bed_mesh']
-        self.finish(self.gotDefaultProbeZHeight, float(bedMesh['horizontal_move_z']))
+        configPath = ['status', 'configfile', 'config']
+        bedMeshPath = configPath + ['bed_mesh']
+
+        # Get bed mesh
+        config = self._getField(replyJson, configPath)
+        bedMesh = config.get(bedMeshPath[-1])
+        if bedMesh is None:
+            raise ValueError('Get default probe Z-height failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
+
+        # Get probe z-height
+        probeZHeight = bedMesh.get('horizontal_move_z')
+        if probeZHeight is None:
+            raise ValueError('Get default probe Z-height failed, \'horizontal_move_z\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
+        probeZHeight = self._safeConvert(float, probeZHeight)
+        if probeZHeight is None:
+            raise ValueError('Get default probe Z-height failed, invalid value for \'bed_mesh:horizontal_move_z\' field in \'printer.cfg\'.')
+
+        self.finish(self.gotDefaultProbeZHeight, probeZHeight)
 
 class GetDefaultProbeXYSpeedMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_XY_SPEED
@@ -417,8 +578,24 @@ class GetDefaultProbeXYSpeedMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        bedMesh = replyJson['status']['configfile']['config']['bed_mesh']
-        self.finish(self.gotDefaultProbeXYSpeed, float(bedMesh['speed']))
+        configPath = ['status', 'configfile', 'config']
+        bedMeshPath = configPath + ['bed_mesh']
+
+        # Get bed mesh
+        config = self._getField(replyJson, configPath)
+        bedMesh = config.get(bedMeshPath[-1])
+        if bedMesh is None:
+            raise ValueError('Get default probe XY speed failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
+
+        # Get probe XY speed
+        probeXYSpeed = bedMesh.get('speed')
+        if probeXYSpeed is None:
+            raise ValueError('Get default probe XY speed failed, \'speed\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
+        probeXYSpeed = self._safeConvert(float, probeXYSpeed)
+        if probeXYSpeed is None:
+            raise ValueError('Get default probe XY speed failed, invalid value for \'bed_mesh:speed\' field in \'printer.cfg\'.')
+
+        self.finish(self.gotDefaultProbeXYSpeed, probeXYSpeed)
 
 class ProbeMachine(MoonrakerMachine):
     TYPE = CommandType.PROBE
@@ -444,53 +621,59 @@ class ProbeMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterRaise(self, replyJson):
-        try:
-            probe = replyJson['status']['configfile']['config']['probe']
-            self.xOffset = float(probe['x_offset'])
-            self.yOffset = float(probe['y_offset'])
-        except:
-            self.reportError('Probe (query) failed.')
-        else:
-            self.setTransition(self._enterWaitForRaise)
-            self.getGCode(f'G0 Z{self.probeHeight}')
+        configPath = ['status', 'configfile', 'config']
+        probePath = configPath + ['probe']
+
+        # Get probe
+        config = self._getField(replyJson, configPath)
+        probe = config.get(probePath[-1])
+        if probe is None:
+            raise ValueError('Probe failed, \'probe\' section not found in \'printer.cfg\'.')
+
+        # Get x offset
+        self.xOffset = self._safeConvert(float, probe.get('x_offset', 0.0))
+        if self.xOffset is None:
+            raise ValueError('Probe failed, invalid value for \'probe:x_offset\' field in \'printer.cfg\'.')
+
+        # Get y offset
+        self.yOffset = self._safeConvert(float, probe.get('y_offset', 0.0))
+        if self.yOffset is None:
+            raise ValueError('Probe failed, invalid value for \'probe:y_offset\' field in \'printer.cfg\'.')
+
+        self.setTransition(self._enterWaitForRaise)
+        self.getGCode(f'G0 Z{self.probeHeight}')
 
     def _enterWaitForRaise(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Probe (raise) failed.')
-        else:
-            self.setTransition(self._enterMove)
-            self.getGCode(f'M400')
+        self._verifyOk(replyJson, 'Probe failed while raising the toolhead.')
+        self.setTransition(self._enterMove)
+        self.getGCode(f'M400')
 
     def _enterMove(self, replyJson):
+        self._verifyOk(replyJson, 'Probe failed waiting for the toolhead to rise.')
         self.setTransition(self._enterWaitForMove)
         self.getGCode(f'G0 X{self.x - self.xOffset} Y{self.y - self.yOffset} F{60*self.xySpeed}')
 
     def _enterWaitForMove(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Probe (move) failed.')
-        else:
-            self.setTransition(self._enterProbe)
-            self.getGCode(f'M400')
+        self._verifyOk(replyJson, 'Probe failed while moving toolhead.')
+        self.setTransition(self._enterProbe)
+        self.getGCode(f'M400')
 
     def _enterProbe(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Probe (wait for move) failed.')
-        else:
-            self.setTransition(self._enterGetResult)
-            self.getGCode(f'PROBE SAMPLES={self.sampleCount}') # TODO: Add more configuration parameters (see https://www.klipper3d.org/G-Codes.html#additional-commands)
+        self._verifyOk(replyJson, 'Probe failed waiting for the toolhead to move.')
+        self.setTransition(self._enterGetResult)
+        self.getGCode(f'PROBE SAMPLES={self.sampleCount}') # TODO: Add more configuration parameters (see https://www.klipper3d.org/G-Codes.html#additional-commands)
 
     def _enterGetResult(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Probe (probe) failed.')
-        else:
-            self.setTransition(self._enterDone)
-            self.get('/printer/objects/query?probe')
+        self._verifyOk(replyJson, 'Probe failed while probing.')
+        self.setTransition(self._enterDone)
+        self.get('/printer/objects/query?probe')
 
     def _enterDone(self, replyJson):
-        probe = replyJson['status']['probe']
-        result = ProbeResult(x=self.x, y=self.y, z=probe['last_z_result'])
-
-        self.finish(self.probed, result)
+        z = self._getField(replyJson, ['status', 'probe', 'last_z_result'], type_=float)
+        self.finish(self.probed,
+                    ProbeResult(x = self.x,
+                                y = self.y,
+                                z = z))
 
 class MoveMachine(MoonrakerMachine):
     TYPE = CommandType.MOVE
@@ -511,27 +694,22 @@ class MoveMachine(MoonrakerMachine):
         self.getGCode('G91' if self.relative else 'G90')
 
     def _enterMove(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Move (mode) failed.')
-        else:
-            self.setTransition(self._enterWait if self.wait else self._enterDone)
+        self._verifyOk(replyJson, f'Move failed while switching to {"relative" if self.relative else "absolute"} moves.')
 
-            xPart = f' X{self.x}' if self.x is not None else ''
-            yPart = f' Y{self.y}' if self.y is not None else ''
-            zPart = f' Z{self.z}' if self.z is not None else ''
-            ePart = f' E{self.e}' if self.e is not None else ''
-            fPart = f' F{self.f}' if self.f is not None else ''
-            self.getGCode('G0' + xPart + yPart + zPart + ePart + fPart)
+        self.setTransition(self._enterWait if self.wait else self._enterDone)
+
+        xPart = f' X{self.x}' if self.x is not None else ''
+        yPart = f' Y{self.y}' if self.y is not None else ''
+        zPart = f' Z{self.z}' if self.z is not None else ''
+        ePart = f' E{self.e}' if self.e is not None else ''
+        fPart = f' F{self.f}' if self.f is not None else ''
+        self.getGCode('G0' + xPart + yPart + zPart + ePart + fPart)
 
     def _enterWait(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Move (move) failed.')
-        else:
-            self.setTransition(self._enterDone)
-            self.getGCode('M400')
+        self._verifyOk(replyJson, f'Move failed while moving.')
+        self.setTransition(self._enterDone)
+        self.getGCode('M400')
 
     def _enterDone(self, replyJson):
-        if replyJson != 'ok':
-            self.reportError('Move failed.')
-        else:
-            self.finish(self.moved)
+        self._verifyOk(replyJson, f'Moved failed while waiting for move to finish.')
+        self.finish(self.moved)
