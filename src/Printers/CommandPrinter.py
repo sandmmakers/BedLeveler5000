@@ -98,7 +98,6 @@ class CommandPrinter(Printer):
     # Settings
     @loggedFunction
     def getProbeSampleCount(self):
-        self.logger.info(f'Opened {self._serialPort.portName()}')
         return self._probeSampleCount
 
     @loggedFunction
