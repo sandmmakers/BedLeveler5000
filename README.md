@@ -26,7 +26,7 @@ to use **Bed Leveler 5000**.
 **Bed Leveler 5000** uses a number of open source projects to work properly:
 
 - [PySide6] - The official Python module from the Qt for Python project
-- [Python] - The Python programming language
+- [Python] - The Python programming language (3.12+)
 - [pylint] - A static code analyser for Python 2 and 3
 - [Pillow] - The friendly PIL fork
 
@@ -43,15 +43,19 @@ to use **Bed Leveler 5000**.
 >Use of Ubuntu's Dark theme is not recommended.
 
 1) Configure the system
-    1) Ensure **brltty** is not installed
-    ```
-    sudo apt remove brltty
-    ```
-    2) Give the current user permissions to use serial ports
-    ```
-    sudo usermod -a -G dialout $USER
-    ```
-    3) Reboot to ensure all changes take effect
+    1) Install prerequisites
+       ```
+       sudo apt-get install libxcb-cursor0
+       ```
+    2) Ensure **brltty** is not installed
+       ```
+       sudo apt remove brltty
+       ```
+    3) Give the current user permissions to use serial ports
+       ```
+       sudo usermod -a -G dialout $USER
+       ```
+    4) Reboot to ensure all changes take effect
 2) Download the **.tgz** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
 3) Extract the downloaded archive
 4) Launch **BedLeveler5000**, **PrinterInfoWizard**, or **InspectorG-code**
@@ -91,35 +95,80 @@ to use **Bed Leveler 5000**.
 
 ### Ubuntu Linux
 1) Perform the **Configure the system** steps listed in the installation directions
-2) (Optional) Ensure **python3-venv** is installed
+2) Ensure system prerequisites are installed
    ```
-   sudo apt-get install python3-venv
+   sudo apt-get install binutils git
    ```
-2) Ensure **binutils** is installed
-   ```
-   sudo apt-get install binutils
-   ```
-2) Clone the repository
+3) Install and configure Python
+    - Systems with Python 3.12+
+        1) (Optional) Ensure **python3-venv** is installed
+           ```
+           sudo apt-get install python3-venv
+           ```
+    - Systems without Python 3.12+
+        1) Ensure the system is fully up to date
+           ```
+           sudo apt-get update
+           sudo apt-get upgrade
+           ```
+        2) Ensure prerequisites for building Python are installed
+           ```
+           sudo apt install build-essential libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev curl libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+           ```
+        3) Install `pyenv`
+            1) Clone `pyenv`
+               ```
+               git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+               ```
+            2) Build `pyenv` dynamic `bash` extension
+               ```
+               (cd ~/.pyenv && src/configure && make -C src)
+               ```
+            3) Add the following to `~/.bashrc` to configure environment
+               ```
+               # Configure pyenv
+               export PYENV_ROOT="${HOME}/.pyenv"
+               export PATH=~/.pyenv/bin:${PATH}
+               eval "$(pyenv init -)"
+               ```
+            4) Ensure changes take affect
+               ```
+               source ~/.bashrc
+               ```
+        4) Install **Python 3.12+**
+            1) Install **Python 3.12** or later
+               ```
+               pyenv install 3.12.0
+               ```
+            2) Activate **Python 3.12**+ for the current shell
+               ```
+               pyenv shell 3.12.0 # or newer
+               ```
+            3) (Optional) Update pip to prevent warnings
+               ```
+               pip install --upgrade pip
+               ```
+4) Clone the repository
    ```
    git clone https://github.com/sandmmakers/BedLeveler5000.git
    ```
-3) Enter the repository
+5) Enter the repository
    ```
    cd BedLeveler5000
    ```
-4) (Optional) Create a virtual environment
+6) (Optional) Create a virtual environment
    ```
    python3 -m venv venv
    ```
-5) Activate the virtual environment
+7) Activate the virtual environment
    ```
    source venv/bin/activate
    ```
-6) Install prerequisites
+8) Install prerequisites
    ```
    pip3 install -r requirements.txt
    ```
-7) Build the binary package
+9) Build the binary package
    ```
    ./build_all
    ```
