@@ -149,7 +149,11 @@ if __name__ == '__main__':
     from PySide6 import QtWidgets
     import argparse
     import pathlib
+    import signal
     import sys
+
+    # Enable CTRL-C killing the application
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     class MainWindow(QtWidgets.QMainWindow):
         def __init__(self, printersDir, *args, printer=None, host=None, port=None, **kwargs):
