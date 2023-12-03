@@ -4,6 +4,7 @@ from Widgets.PrinterConnectWidget import PrinterConnectWidget
 from Printers.Moonraker.MoonrakerPrinter import MoonrakerPrinter
 from Printers.Marlin2.Marlin2Printer import Marlin2Printer
 from Dialogs.AboutDialog import AboutDialog
+from Dialogs.FatalErrorDialog import FatalErrorDialog
 from Common import Common
 from Common import Version
 from PySide6 import QtCore
@@ -434,8 +435,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.logTextEdit.clear()
 
 if __name__ == '__main__':
-    from Dialogs.FatalErrorDialog import FatalErrorDialog
-
     app = QtWidgets.QApplication(sys.argv)
     app.setApplicationName('Printer Tester')
     app.setApplicationVersion(Version.version())
