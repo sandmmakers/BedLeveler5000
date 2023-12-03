@@ -124,8 +124,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setProbeXYSpeedButton = QtWidgets.QPushButton('SetProbeXYSpeed')
         self.setProbeXYSpeedButton.clicked.connect(lambda: self.printer.setProbeXYSpeed(self.probeXYSpeedSpinBox.value()))
         self.probeXYSpeedSpinBox = QtWidgets.QDoubleSpinBox()
-        self.probeXYSpeedSpinBox.setMaximum(10000)
-        self.probeXYSpeedSpinBox.setValue(5000)
+        self.probeXYSpeedSpinBox.setMaximum(1000)
+        self.probeXYSpeedSpinBox.setValue(120)
 
         # Probe
         self.probeButton = QtWidgets.QPushButton("Probe")
