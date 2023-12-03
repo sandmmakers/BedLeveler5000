@@ -436,8 +436,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'PrinterTester-128x128.png').as_posix()))
     app.setApplicationName('Printer Tester')
     app.setApplicationVersion(Version.version())
+
+    # Windows only, configure icon settings
+    try:
+        from ctypes import windll
+        myappid = f'com.sandmmakers.printertester.{QtCore.QCoreApplication.applicationVersion()}'
+        windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    except ImportError:
+        pass
 
     # Parse command line arguments
     parser = CommonArgumentParser(description=DESCRIPTION)
