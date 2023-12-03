@@ -220,8 +220,6 @@ class PrinterConnectWidget(QtWidgets.QWidget):
                 self._setCurrentSpecific(desiredPort)
             elif printerInfo.connectionMode == ConnectionMode.MOONRAKER and desiredHost is not None:
                 self._setCurrentSpecific(desiredHost)
-            else:
-                raise IOError('Detected an unsupported printer type.')
 
         # Update field type label
         self._updateFieldTypeLabel()
