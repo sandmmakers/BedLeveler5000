@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from Common import Common
+from Common.CommonArgumentParser import CommonArgumentParser
 from Dialogs.AboutDialog import AboutDialog
 from Dialogs.PrinterInfoWizard.TestConnectionDialog import TestConnectionDialog
 from Dialogs.PrinterInfoWizard.ConfigureGridPointDialog import ConfigureGridPointDialog
@@ -327,12 +328,8 @@ if __name__ == '__main__':
     except ImportError:
         pass
 
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument('-v', '--version', action='version', version=app.applicationVersion())
-    parser.add_argument('--log-level', choices=['all', 'debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
-    parser.add_argument('--log-console', action='store_true', help='log to the console')
-    parser.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
-
+    # Parse command line arguments
+    parser = CommonArgumentParser(description=DESCRIPTION, addPrinters=False)
     args = parser.parse_args()
 
     # Configure logging

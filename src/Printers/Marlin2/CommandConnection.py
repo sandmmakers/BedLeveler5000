@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from Common.CommonArgumentParser import CommonArgumentParser
 from .Commands.CommandBase import CommandBase
 from .Commands.CommandG0 import CommandG0
 from .Commands.CommandG28 import CommandG28
@@ -672,18 +673,7 @@ if __name__ == '__main__':
     app.setApplicationVersion(Version.version())
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Test app for CommandConnection')
-    parser.add_argument('-v', '--version', action='version', version=app.applicationVersion())
-    parser.add_argument('--printers-dir', default=Common.printersDir(), type=pathlib.Path, help='printer information directory')
-    parser.add_argument('--printer', default=None, help='printer to use')
-
-    # port AND host require --printer to be used
-    parser.add_argument('--port', default=None, help='port to use for Marlin2 connection')
-    parser.add_argument('--host', default=None, help='host to use for Moonraker connection')
-    parser.add_argument('--log-level', choices=['debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
-    parser.add_argument('--log-console', action='store_true', help='log to the console')
-    parser.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
-
+    parser = CommonArgumentParser(description='Test app for CommandConnection')
     args = parser.parse_args()
 
     # Configure logging

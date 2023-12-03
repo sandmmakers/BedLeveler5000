@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from Common import Common
+from Common.CommonArgumentParser import CommonArgumentParser
 from Dialogs.AboutDialog import AboutDialog
 from Dialogs.WarningDialog import WarningDialog
 from Dialogs.ErrorDialog import ErrorDialog
@@ -213,19 +214,7 @@ if __name__ == '__main__':
         pass
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description=DESCRIPTION)
-    parser.add_argument('-v', '--version', action='version', version=app.applicationVersion())
-    parser.add_argument('--printers-dir', default=Common.printersDir(), type=pathlib.Path, help='printer information directory')
-    parser.add_argument('--printer', default=None, help='printer to use')
-
-    printerSpecificGroup = parser.add_mutually_exclusive_group()
-    printerSpecificGroup.add_argument('--port', default=None, help='port to use for Marlin2 connection')
-    printerSpecificGroup.add_argument('--host', default=None, help='host to use for Moonraker connection')
-
-    parser.add_argument('--log-level', choices=['all', 'debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
-    parser.add_argument('--log-console', action='store_true', help='log to the console')
-    parser.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
-
+    parser = CommonArgumentParser(description=DESCRIPTION)
     args = parser.parse_args()
 
     # Configure logging
