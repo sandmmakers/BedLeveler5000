@@ -206,6 +206,10 @@ class PrinterConnectWidget(QtWidgets.QWidget):
                 if previousPrinterInfo.connectionMode == printerDetails.printerInfo.connectionMode:
                     self._setCurrentSpecific(previousSpecific)
 
+        # If there is a desired printer, ensure it was found
+        if desiredPrinter is not None and desiredPrinterIndex is None:
+            raise IOError(f'Failed to find desired printer \'{desiredPrinter}\'.')
+
         # Set desired printer and values
         if desiredPrinterIndex is not None:
             self.printerComboBox.setCurrentIndex(desiredPrinterIndex)
