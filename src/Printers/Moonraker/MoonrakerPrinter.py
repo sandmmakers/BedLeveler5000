@@ -444,33 +444,45 @@ class GetMeshCoordinatesMachine(MoonrakerMachine):
 
     def start(self):
         self.setTransition(self._enterDone)
-        self.get('/printer/objects/query?bed_mesh')
+        self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        profilesPath = ['status', 'bed_mesh', 'profiles']
+        configPath = ['status', 'configfile', 'config']
+        bedMeshPath = configPath + ['bed_mesh']
 
-        # Get profiles
-        profiles = self._getField(replyJson, profilesPath)
+        # Get config
+        config = self._getField(replyJson, configPath)
 
-        # Get loaded profile name
-        profileName = self._getField(replyJson, ['status', 'bed_mesh', 'profile_name'])
-        if len(profileName) == 0:
-            raise ValueError(f'Get mesh coordinates failed, no mesh profile loaded. A loaded mesh profile is required.')
+        # Get bed mesh
+        bedMesh = config.get(bedMeshPath[-1])
+        if bedMesh is None:
+            raise ValueError('Init failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
 
-        # Get the loaded profile
-        profile = profiles.get(profileName)
-        if profile is None:
-            raise ValueError('Get mesh coordinates failed, loaded mesh not found.')
+        def getValuePair(type_, name, bedMesh):
+            values = bedMesh.get(name)
+            if values is None:
+                raise ValueError(f'Get mesh coordinates failed, \'{name}\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
 
-        # Get mesh params
-        meshParamsPath = profilesPath + [profileName, 'mesh_params']
+            values = values.split(',')
+            for index in range(len(values)):
+                values[index] = self._safeConvert(type_, values[index].strip())
+
+            if len(values) != 2 or None in values:
+                raise ValueError('Got mesh coordinates failed, invalid value for \'bed_mesh:{name}\' field in \'printer.cfg\'.')
+
+            return values
+
+        minX, minY = getValuePair(float, 'mesh_min', bedMesh)
+        maxX, maxY = getValuePair(float, 'mesh_max', bedMesh)
+        columnCount, rowCount = getValuePair(int, 'probe_count', bedMesh)
+
         self.finish(self.gotMeshCoordinates,
-                    CommandPrinter.calculateMeshCoordinates(rowCount = self._getField(replyJson, meshParamsPath + ['y_count'], type_=int),
-                                                            columnCount = self._getField(replyJson, meshParamsPath + ['x_count'], type_=int),
-                                                            minX = self._getField(replyJson, meshParamsPath + ['min_x'], type_=float),
-                                                            maxX = self._getField(replyJson, meshParamsPath + ['max_x'], type_=float),
-                                                            minY = self._getField(replyJson, meshParamsPath + ['min_y'], type_=float),
-                                                            maxY = self._getField(replyJson, meshParamsPath + ['max_y'], type_=float)))
+                    CommandPrinter.calculateMeshCoordinates(rowCount = rowCount,
+                                                            columnCount = columnCount,
+                                                            minX = minX,
+                                                            maxX = maxX,
+                                                            minY = minY,
+                                                            maxY = maxY))
 
 class SetBedTemperatureMachine(MoonrakerMachine):
     TYPE = CommandType.SET_BED_TEMPERATURE
