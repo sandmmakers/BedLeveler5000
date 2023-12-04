@@ -285,6 +285,7 @@ class PrinterConnectWidget(QtWidgets.QWidget):
 if __name__ == '__main__':
     # Main only imports
     import pathlib
+    import signal
     import sys
 
     class MainWindow(QtWidgets.QMainWindow):
@@ -349,6 +350,8 @@ if __name__ == '__main__':
             self.withHomePrinterConnectWidget.enumeratePorts()
             self.withoutHomePrinterConnectWidget.enumeratePorts()
 
+    # Enable CTRL-C killing the application
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     app = QtWidgets.QApplication(sys.argv)
     mainWindow = MainWindow()
@@ -356,5 +359,7 @@ if __name__ == '__main__':
 
     try:
        sys.exit(app.exec())
+    except KeyboardInterrupt:
+        sys.exit(1)
     except Exception as exception:
         FatalErrorDialog(None, str(exception))
