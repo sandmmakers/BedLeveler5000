@@ -158,7 +158,8 @@ class MainWindow(QtWidgets.QMainWindow):
         return f'{base}-{self.currentId}'
 
     def connectToPrinter(self):
-        assert(self.printerInfo == self.printerConnectWidget.printerInfo())
+        assert self.printerInfo == self.printerConnectWidget.printerInfo()
+        assert self.printerConnectWidget.connectionMode() in ConnectionMode
 
         # Create the printer and determine open arguments
         if self.printerConnectWidget.connectionMode() == ConnectionMode.MARLIN_2:
@@ -167,8 +168,6 @@ class MainWindow(QtWidgets.QMainWindow):
         elif self.printerConnectWidget.connectionMode() == ConnectionMode.MOONRAKER:
             self.printer = MoonrakerPrinter(self.printerConnectWidget.printerInfo(), parent=self)
             kwargs = {'host': self.printerConnectWidget.host()}
-        else:
-            raise ValueError('Unsupported printer type detected.')
 
         # Make connections
         self.printerQtConnections.append(self.printer.errorOccurred.connect(self._error))
