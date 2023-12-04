@@ -35,7 +35,7 @@
 1) Perform the **Configure the system** steps listed in the installation directions
 2) Ensure system prerequisites are installed
    ```
-   sudo apt-get install binutils git
+   sudo apt-get install binutils git libxcb-cursor0
    ```
 3) Install and configure Python
     - Systems with Python 3.12+

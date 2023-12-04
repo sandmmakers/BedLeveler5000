@@ -43,19 +43,15 @@ to use **Bed Leveler 5000**.
 >Use of Ubuntu's Dark theme is not recommended.
 
 1) Configure the system
-    1) Install prerequisites
-       ```
-       sudo apt-get install libxcb-cursor0
-       ```
-    2) Ensure **brltty** is not installed
+    1) Ensure **brltty** is not installed
        ```
        sudo apt remove brltty
        ```
-    3) Give the current user permissions to use serial ports
+    2) Give the current user permissions to use serial ports
        ```
        sudo usermod -a -G dialout $USER
        ```
-    4) Reboot to ensure all changes take effect
+    3) Reboot to ensure all changes take effect
 2) Download the **.tgz** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
 3) Extract the downloaded archive
 4) Launch **BedLeveler5000**, **PrinterInfoWizard**, or **InspectorG-code**
