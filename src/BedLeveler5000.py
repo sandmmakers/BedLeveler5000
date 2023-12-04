@@ -170,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
             kwargs = {'host': self.printerConnectWidget.host()}
 
         # Make connections
-        self.printerQtConnections.append(self.printer.errorOccurred.connect(self._error))
+        self.printerQtConnections.append(self.printer.errorOccurred.connect(self.reportPrinterError))
         self.printerQtConnections.append(self.printer.inited.connect(self._processInitResults))
         self.printerQtConnections.append(self.printer.homed.connect(self._finishHoming))
         self.printerQtConnections.append(self.printer.gotTemperatures.connect(self.updateTemperatures))
@@ -348,18 +348,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.printer.abort()
         self.updateState(self.State.CONNECTED)
 
+    def reportPrinterError(self, type_, id_, context, message):
+        self._error(message)
+
     def _fatalError(self, message):
         self.logger.critical(message)
         self.disconnectFromPrinter()
         for dialog in self.dialogs.values():
+            dialog.blockSignals(True)
             dialog.reject()
+            dialog.blockSignals(False)
         FatalErrorDialog(self, message)
 
     def _error(self, message):
         self.logger.error(message)
         self.disconnectFromPrinter()
         for dialog in self.dialogs.values():
+            dialog.blockSignals(True)
             dialog.reject()
+            dialog.blockSignals(False)
         ErrorDialog(self, message)
 
     def _warning(self, message):
