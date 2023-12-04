@@ -222,10 +222,6 @@ class MainWindow(QtWidgets.QMainWindow):
         except ValueError as valueError:
             self._fatalError(valueError.args[0])
 
-    @classmethod
-    def _FloatToString(value):
-        return f'{value}'
-
     def updateState(self, state=None):
         if state is not None:
             self.state = state
