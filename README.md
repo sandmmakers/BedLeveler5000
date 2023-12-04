@@ -60,6 +60,9 @@ to use **Bed Leveler 5000**.
 3) Extract the downloaded archive
 4) Launch **BedLeveler5000**, **PrinterInfoWizard**, or **InspectorG-code**
 
+## Filing a bug report
+See [Filing a bug report](Docs/FilingABugReport.md)
+
 ## Building from source
 See [Building from source](Docs/BuildingFromSource.md)
 
