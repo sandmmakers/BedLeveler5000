@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from Common.CommonArgumentParser import CommonArgumentParser
+from Dialogs.FatalErrorDialog import FatalErrorDialog
 from .Commands.CommandBase import CommandBase
 from .Commands.CommandG0 import CommandG0
 from .Commands.CommandG28 import CommandG28
@@ -698,3 +699,5 @@ if __name__ == '__main__':
        sys.exit(app.exec())
     except KeyboardInterrupt:
         sys.exit(1)
+    except Exception as exception:
+        FatalErrorDialog(None, str(exception))

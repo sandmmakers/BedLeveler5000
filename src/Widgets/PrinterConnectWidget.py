@@ -3,6 +3,7 @@
 from Common.Common import printersDir
 from Common import PrinterInfo
 from Common.PrinterInfo import ConnectionMode
+from Dialogs.FatalErrorDialog import FatalErrorDialog
 from PySide6 import QtCore
 from PySide6 import QtGui
 from PySide6 import QtWidgets
@@ -352,4 +353,8 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     mainWindow = MainWindow()
     mainWindow.show()
-    sys.exit(app.exec())
+
+    try:
+       sys.exit(app.exec())
+    except Exception as exception:
+        FatalErrorDialog(None, str(exception))

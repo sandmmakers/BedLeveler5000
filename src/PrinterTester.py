@@ -469,3 +469,5 @@ if __name__ == '__main__':
        sys.exit(app.exec())
     except KeyboardInterrupt:
         sys.exit(1)
+    except Exception as exception:
+        FatalErrorDialog(None, str(exception))

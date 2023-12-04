@@ -7,6 +7,7 @@ from Dialogs.PrinterInfoWizard.TestConnectionDialog import TestConnectionDialog
 from Dialogs.PrinterInfoWizard.ConfigureGridPointDialog import ConfigureGridPointDialog
 from Dialogs.PrinterInfoWizard.PerformHomingDialog import PerformHomingDialog
 from Dialogs.ErrorDialog import ErrorDialog
+from Dialogs.FatalErrorDialog import FatalErrorDialog
 from Common import PrinterInfo
 from Common.PrinterInfo import ConnectionMode
 from Common.PrinterInfo import CONNECTION_MODE_MAP
@@ -342,3 +343,5 @@ if __name__ == '__main__':
        sys.exit(app.exec())
     except KeyboardInterrupt:
         sys.exit(1)
+    except Exception as exception:
+        FatalErrorDialog(None, str(exception))
