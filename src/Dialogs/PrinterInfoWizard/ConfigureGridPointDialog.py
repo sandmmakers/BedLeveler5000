@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from Common.PrinterInfo import ConnectionMode
 from Common.PrinterInfo import GridProbePoint
 from Printers.CommandPrinter import GetCurrentPositionResult
 from Common.PrinterInfo import Marlin2Connection
@@ -13,6 +14,7 @@ import logging
 import uuid
 
 class ConfigureGridPointDialog(QtWidgets.QDialog):
+    TIMEOUT = 3000
     MAXIMUM = 999
     DECIMALS = 3
 
@@ -20,23 +22,32 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle('Configure Grid Point')
+        self.xOffset = None
+        self.yOffset = None
 
         self.__createWidgets(gridPoint)
         self.__layoutWidgets()
 
-        if isinstance(printerInfo.connection, Marlin2Connection):
-            assert(port is not None)
+        # Create the printer
+        assert printerInfo.connectionMode in [ConnectionMode.MARLIN_2, ConnectionMode.MOONRAKER]
+        if printerInfo.connectionMode == ConnectionMode.MARLIN_2:
+            assert port is not None
             self.printer = Marlin2Printer(printerInfo=printerInfo, port=port, parent=self)
-        elif isinstance(printerInfo.connection, MoonrakerConnection):
-            assert(host is not None)
+        elif printerInfo.connectionMode == ConnectionMode.MOONRAKER:
+            assert host is not None
             self.printer = MoonrakerPrinter(printerInfo=printerInfo, host=host, parent=self)
-        else:
-            raise ValueError('Detected unsupported connection mode.')
 
-        self.printer.gotCurrentPosition.connect(self.processPosition)
+        # Setup printer connections
+        self.printer.gotProbeOffsets.connect(self._query)
+        self.printer.gotCurrentPosition.connect(self._processPosition)
+        self.printer.errorOccurred.connect(self._error)
 
+        # Create timer
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(lambda : self._error())
+
+        # Ensure the printer is always closed
+        self.finished.connect(self.close)
 
         self.updateGui()
 
@@ -61,20 +72,24 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
             self.ySpinBox.setValue(point.y)
 
         self.okButton = QtWidgets.QPushButton('Ok')
-        self.okButton.clicked.connect(lambda : self.finish(True))
+        self.okButton.clicked.connect(self.accept)
         self.okButton.setToolTip('Name field must be set.')
 
         self.cancelButton = QtWidgets.QPushButton('Cancel')
-        self.cancelButton.clicked.connect(lambda : self.finish(False))
+        self.cancelButton.clicked.connect(self.reject)
 
-        self.queryButton = QtWidgets.QPushButton('Query')
-        self.queryButton.clicked.connect(self.query)
+        self.queryNozzleButton = QtWidgets.QPushButton('Query Nozzle')
+        self.queryNozzleButton.clicked.connect(lambda: self.getProbeOffsets(False))
+
+        self.queryProbeButton = QtWidgets.QPushButton('Query Probe')
+        self.queryProbeButton.clicked.connect(lambda: self.getProbeOffsets(True))
 
     def __layoutWidgets(self):
         dialogButtonBox = QtWidgets.QDialogButtonBox(QtCore.Qt.Vertical)
         dialogButtonBox.addButton(self.okButton, QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
         dialogButtonBox.addButton(self.cancelButton, QtWidgets.QDialogButtonBox.ButtonRole.RejectRole)
-        dialogButtonBox.addButton(self.queryButton, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
+        dialogButtonBox.addButton(self.queryNozzleButton, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
+        dialogButtonBox.addButton(self.queryProbeButton, QtWidgets.QDialogButtonBox.ButtonRole.ActionRole)
 
         layout = QtWidgets.QGridLayout()
         layout.addWidget(QtWidgets.QLabel('Name:'), 0, 0)
@@ -94,35 +109,56 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
 
     def updateGui(self):
         self.okButton.setEnabled(len(self.nameLineEdit.text()) > 0)
+        self.xSpinBox.setEnabled(not self.printer.connected())
+        self.ySpinBox.setEnabled(not self.printer.connected())
 
-    def processPosition(self, _id, _, response):
+    def close(self):
         self.printer.close()
         self.timer.stop()
-
-        if _id != self.uuid:
-            self.error()
-        else:
-            self.xSpinBox.setValue(response.x)
-            self.ySpinBox.setValue(response.y)
 
     def finish(self, accept):
-        self.printer.close()
-        self.timer.stop()
-
         if accept:
             self.accept()
         else:
             self.reject()
 
-    def query(self):
-        self.timer.start(3000)
+    def getProbeOffsets(self, probe):
+        self.timer.start(self.TIMEOUT)
         self.uuid = str(uuid.uuid1())
 
         try:
             self.printer.open()
-            self.printer.getCurrentPosition(self.uuid)
+            self.printer.getProbeOffsets(f'{self.uuid}-offsets', context={'probe': probe})
+            self.updateGui()
         except OSError:
             self._error()
+
+    def _query(self, _id, context, response):
+        self.xOffset = response.xOffset
+        self.yOffset = response.yOffset
+
+        if _id != f'{self.uuid}-offsets':
+            self.error()
+        else:
+            self.timer.start(self.TIMEOUT)
+            self.printer.getCurrentPosition(f'{self.uuid}-query', context=context)
+
+    def _processPosition(self, _id, context, response):
+        self.printer.close()
+        self.timer.stop()
+
+        if _id != f'{self.uuid}-query':
+            self.error()
+        else:
+            x = response.x
+            y = response.y
+            if context['probe']:
+                x += self.xOffset
+                y += self.yOffset
+
+            self.xSpinBox.setValue(x)
+            self.ySpinBox.setValue(y)
+        self.updateGui()
 
     def point(self):
         return GridProbePoint(name = self.nameLineEdit.text(),
@@ -132,9 +168,9 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
                               y = self.ySpinBox.value())
 
     def _error(self):
-        self.printer.close()
-        self.timer.stop()
+        self.close()
         QtWidgets.QMessageBox.warning(self, 'Error', 'Query failed.')
+        self.updateGui()
 
 if __name__ == '__main__':
     # Main only imports
