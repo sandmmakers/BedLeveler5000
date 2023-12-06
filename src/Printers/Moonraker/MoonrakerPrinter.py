@@ -456,7 +456,7 @@ class GetMeshCoordinatesMachine(MoonrakerMachine):
         # Get bed mesh
         bedMesh = config.get(bedMeshPath[-1])
         if bedMesh is None:
-            raise ValueError('Init failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
+            raise ValueError('Get mesh coordinates failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
 
         def getValuePair(type_, name, bedMesh):
             values = bedMesh.get(name)
@@ -468,7 +468,7 @@ class GetMeshCoordinatesMachine(MoonrakerMachine):
                 values[index] = self._safeConvert(type_, values[index].strip())
 
             if len(values) != 2 or None in values:
-                raise ValueError('Got mesh coordinates failed, invalid value for \'bed_mesh:{name}\' field in \'printer.cfg\'.')
+                raise ValueError('Get mesh coordinates failed, invalid value for \'bed_mesh:{name}\' field in \'printer.cfg\'.')
 
             return values
 
