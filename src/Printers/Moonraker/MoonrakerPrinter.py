@@ -11,6 +11,7 @@ from PySide6 import QtCore
 from PySide6 import QtNetwork
 import json
 import logging
+from typing import NamedTuple
 
 class MoonrakerPrinter(CommandPrinter):
     def __init__(self, printerInfo, host=None, *args, **kwargs):
@@ -112,6 +113,10 @@ class MoonrakerMachine(QtCore.QObject):
     sent = QtCore.Signal(QtCore.QObject, str) # type, id, context, command
     finished = QtCore.Signal(QtCore.QObject, object) # machine, response
     errorOccurred = QtCore.Signal(QtCore.QObject, str) # machine, message
+
+    class ConfigSection(NamedTuple):
+        name: str
+        data: dict
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(parent)
@@ -239,6 +244,29 @@ class MoonrakerMachine(QtCore.QObject):
         if reply != 'ok':
             raise ValueError(message)
 
+    @classmethod
+    def _getConfig(cls, replyJson):
+        configPath = ['status', 'configfile', 'config']
+        return cls._getField(replyJson, configPath)
+
+    @classmethod
+    def _getConfigSection(cls, config, sectionName):
+        section = config.get(sectionName)
+        if section is None:
+            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'{sectionName}\' section not found in \'printer.cfg\'.')
+        return cls.ConfigSection(sectionName, section)
+
+    @classmethod
+    def _getConfigSectionValue(cls, section, valueName, type_=None, default=None):
+        value = section.data.get(valueName, default)
+        if value is None:
+            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'{valueName}\' field not found in \'{section.name}\' section of \'printer.cfg\'.')
+        if type_ is not None:
+            value = cls._safeConvert(type_, value)
+            if value is None:
+                raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, invalid value for \'{section.name}:{valueName}\' field in \'printer.cfg\'.')
+        return value
+
 class InitMachine(MoonrakerMachine):
     TYPE = CommandType.INIT
     inited = QtCore.Signal(str, dict)
@@ -260,47 +288,20 @@ class InitMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        configPath = ['status', 'configfile', 'config']
-        probePath = configPath + ['probe']
-        bedMeshPath = configPath + ['bed_mesh']
-
-        # Get config
-        config = self._getField(replyJson, configPath)
-
-        # Get probe
-        probe = config.get(probePath[-1])
-        if probe is None:
-            raise ValueError('Init failed, \'probe\' section not found in \'printer.cfg\'.')
-
-        # Get bed mesh
-        bedMesh = config.get(bedMeshPath[-1])
-        if bedMesh is None:
-            raise ValueError('Init failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
+        # Get sections
+        config = self._getConfig(replyJson)
+        probe = self._getConfigSection(config, 'probe')
+        bedMesh = self._getConfigSection(config, 'bed_mesh')
 
         # Get probe sample count
-        self.probeSampleCount = probe.get('samples')
-        if self.probeSampleCount is None:
-            raise ValueError('Init failed, \'samples\' field not found in \'probe\' section of \'printer.cfg\'.')
-        self.probeSampleCount = self._safeConvert(int, self.probeSampleCount)
-        if self.probeSampleCount is None:
-            raise ValueError('Init failed, invalid value for \'probe:samples\' field in \'printer.cfg\'.')
+        self.probeSampleCount = self._getConfigSectionValue(probe, 'samples', int, default=1)
 
         # Get probe z-height
-        self.probeZHeight = bedMesh.get('horizontal_move_z')
-        if self.probeZHeight is None:
-            raise ValueError('Init failed, \'horizontal_move_z\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
-        self.probeZHeight = self._safeConvert(float, self.probeZHeight)
-        if self.probeZHeight is None:
-            raise ValueError('Init failed, invalid value for \'bed_mesh:horizontal_move_z\' field in \'printer.cfg\'.')
+        self.probeZHeight = self._getConfigSectionValue(bedMesh, 'horizontal_move_z', float, default=5)
         self.probeZHeight += 10.0 # Add 10.0 for safety
 
         # Get probe XY speed
-        self.probeXYSpeed = bedMesh.get('speed')
-        if self.probeXYSpeed is None:
-            raise ValueError('Init failed, \'speed\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
-        self.probeXYSpeed = self._safeConvert(float, self.probeXYSpeed)
-        if self.probeXYSpeed is None:
-            raise ValueError('Init failed, invalid value for \'bed_mesh:speed\' field in \'printer.cfg\'.')
+        self.probeXYSpeed = self._getConfigSectionValue(bedMesh, 'speed', float, 50)
 
         # Done
         self.finish(self.inited)
@@ -367,32 +368,12 @@ class GetProbeOffsetsMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        configPath = ['status', 'configfile', 'config']
-        probePath = configPath + ['probe']
+        config = self._getConfig(replyJson)
+        probe = self._getConfigSection(config, 'probe')
 
-        # Get probe
-        config = self._getField(replyJson, configPath)
-        probe = config.get(probePath[-1])
-        if probe is None:
-            raise ValueError('Get probe offsets failed, \'probe\' section not found in \'printer.cfg\'.')
-
-        # Get X offset (not required)
-        xOffset = self._safeConvert(float, probe.get('x_offset', 0.0))
-        if xOffset is None:
-            raise ValueError('Get probe offsets failed, invalid value for \'probe:x_offset\' field in \'printer.cfg\'.')
-
-        # Get Y offset (not required)
-        yOffset = self._safeConvert(float, probe.get('y_offset', 0.0))
-        if yOffset is None:
-            raise ValueError('Get probe offsets failed, invalid value for \'probe:y_offset\' field in \'printer.cfg\'.')
-
-        # Get Z offset (required)
-        zOffset = probe.get('z_offset')
-        if zOffset is None:
-            raise ValueError('Get probe offsets failed, \'z_offset\' field not found in \'probe\' section of \'printer.cfg\'.')
-        zOffset = self._safeConvert(float, zOffset)
-        if zOffset is None:
-            raise ValueError('Get probe offsets failed, invalid value for \'probe:z_offset\' field in \'printer.cfg\'.')
+        xOffset = self._getConfigSectionValue(probe, 'x_offset', float, default=0.0)
+        yOffset = self._getConfigSectionValue(probe, 'y_offset', float, default=0.0)
+        zOffset = self._getConfigSectionValue(probe, 'z_offset', float)
 
         # Finish
         self.finish(self.gotProbeOffsets,
@@ -447,30 +428,22 @@ class GetMeshCoordinatesMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        configPath = ['status', 'configfile', 'config']
-        bedMeshPath = configPath + ['bed_mesh']
-
-        # Get config
-        config = self._getField(replyJson, configPath)
-
-        # Get bed mesh
-        bedMesh = config.get(bedMeshPath[-1])
-        if bedMesh is None:
-            raise ValueError('Get mesh coordinates failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
-
         def getValuePair(type_, name, bedMesh):
-            values = bedMesh.get(name)
+            values = bedMesh.data.get(name)
             if values is None:
-                raise ValueError(f'Get mesh coordinates failed, \'{name}\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
+                raise ValueError(f'Get mesh coordinates failed, \'{name}\' field not found in \'{bedMesh.name}\' section of \'printer.cfg\'.')
 
             values = values.split(',')
             for index in range(len(values)):
                 values[index] = self._safeConvert(type_, values[index].strip())
 
             if len(values) != 2 or None in values:
-                raise ValueError('Get mesh coordinates failed, invalid value for \'bed_mesh:{name}\' field in \'printer.cfg\'.')
+                raise ValueError('Get mesh coordinates failed, invalid value for \'{bedMesh.name}:{name}\' field in \'printer.cfg\'.')
 
             return values
+
+        config = self._getConfig(replyJson)
+        bedMesh = self._getConfigSection(config, 'bed_mesh')
 
         minX, minY = getValuePair(float, 'mesh_min', bedMesh)
         maxX, maxY = getValuePair(float, 'mesh_max', bedMesh)
@@ -528,22 +501,9 @@ class GetDefaultProbeSampleCountMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        configPath = ['status', 'configfile', 'config']
-        probePath = configPath + ['probe']
-
-        # Get probe
-        config = self._getField(replyJson, configPath)
-        probe = config.get(probePath[-1])
-        if probe is None:
-            raise ValueError('Get default probe sample count failed, \'probe\' section not found in \'printer.cfg\'.')
-
-        # Get probe sample count
-        probeSampleCount = probe.get('samples')
-        if probeSampleCount is None:
-            raise ValueError('Get default probe sample count failed, \'samples\' field not found in \'probe\' section of \'printer.cfg\'.')
-        probeSampleCount = self._safeConvert(int, probeSampleCount)
-        if probeSampleCount is None:
-            raise ValueError('Get default probe sample count failed, invalid value for \'probe:samples\' field in \'printer.cfg\'.')
+        config = self._getConfig(replyJson)
+        probe = self._getConfigSection(config, 'probe')
+        probeSampleCount = self._getConfigSectionValue(probe, 'samples', int, default=1)
 
         self.finish(self.gotDefaultProbeSampleCount, probeSampleCount)
 
@@ -559,22 +519,9 @@ class GetDefaultProbeZHeightMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        configPath = ['status', 'configfile', 'config']
-        bedMeshPath = configPath + ['bed_mesh']
-
-        # Get bed mesh
-        config = self._getField(replyJson, configPath)
-        bedMesh = config.get(bedMeshPath[-1])
-        if bedMesh is None:
-            raise ValueError('Get default probe Z-height failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
-
-        # Get probe z-height
-        probeZHeight = bedMesh.get('horizontal_move_z')
-        if probeZHeight is None:
-            raise ValueError('Get default probe Z-height failed, \'horizontal_move_z\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
-        probeZHeight = self._safeConvert(float, probeZHeight)
-        if probeZHeight is None:
-            raise ValueError('Get default probe Z-height failed, invalid value for \'bed_mesh:horizontal_move_z\' field in \'printer.cfg\'.')
+        config = self._getConfig(replyJson)
+        bedMesh = self._getConfigSection(config, 'bed_mesh')
+        probeZHeight = self._getConfigSectionValue(bedMesh, 'horizontal_move_z', float, default=5)
 
         self.finish(self.gotDefaultProbeZHeight, probeZHeight)
 
@@ -590,22 +537,9 @@ class GetDefaultProbeXYSpeedMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterDone(self, replyJson):
-        configPath = ['status', 'configfile', 'config']
-        bedMeshPath = configPath + ['bed_mesh']
-
-        # Get bed mesh
-        config = self._getField(replyJson, configPath)
-        bedMesh = config.get(bedMeshPath[-1])
-        if bedMesh is None:
-            raise ValueError('Get default probe XY speed failed, \'bed_mesh\' section not found in \'printer.cfg\'.')
-
-        # Get probe XY speed
-        probeXYSpeed = bedMesh.get('speed')
-        if probeXYSpeed is None:
-            raise ValueError('Get default probe XY speed failed, \'speed\' field not found in \'bed_mesh\' section of \'printer.cfg\'.')
-        probeXYSpeed = self._safeConvert(float, probeXYSpeed)
-        if probeXYSpeed is None:
-            raise ValueError('Get default probe XY speed failed, invalid value for \'bed_mesh:speed\' field in \'printer.cfg\'.')
+        config = self._getConfig(replyJson)
+        bedMesh = self._getConfigSection(config, 'bed_mesh')
+        probeXYSpeed = self._getConfigSectionValue(bedMesh, 'speed', float, 50)
 
         self.finish(self.gotDefaultProbeXYSpeed, probeXYSpeed)
 
@@ -633,24 +567,11 @@ class ProbeMachine(MoonrakerMachine):
         self.get('/printer/objects/query?configfile')
 
     def _enterRaise(self, replyJson):
-        configPath = ['status', 'configfile', 'config']
-        probePath = configPath + ['probe']
+        config = self._getConfig(replyJson)
+        probe = self._getConfigSection(config, 'probe')
 
-        # Get probe
-        config = self._getField(replyJson, configPath)
-        probe = config.get(probePath[-1])
-        if probe is None:
-            raise ValueError('Probe failed, \'probe\' section not found in \'printer.cfg\'.')
-
-        # Get x offset
-        self.xOffset = self._safeConvert(float, probe.get('x_offset', 0.0))
-        if self.xOffset is None:
-            raise ValueError('Probe failed, invalid value for \'probe:x_offset\' field in \'printer.cfg\'.')
-
-        # Get y offset
-        self.yOffset = self._safeConvert(float, probe.get('y_offset', 0.0))
-        if self.yOffset is None:
-            raise ValueError('Probe failed, invalid value for \'probe:y_offset\' field in \'printer.cfg\'.')
+        self.xOffset = self._getConfigSectionValue(probe, 'x_offset', float, default=0.0)
+        self.yOffset = self._getConfigSectionValue(probe, 'y_offset', float, default=0.0)
 
         self.setTransition(self._enterWaitForRaise)
         self.getGCode(f'G0 Z{self.probeHeight}')
