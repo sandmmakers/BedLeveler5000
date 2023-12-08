@@ -182,6 +182,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.printerConnectWidget.setConnected()
         self.meshCoordinates = None
 
+        # Set the temperature controls to off
+        self.temperatureControlsWidget.resetButtons()
+
         # Start the temperature timer
         self.temperatureJobPending = False
         if not self.noTemperatureReporting:

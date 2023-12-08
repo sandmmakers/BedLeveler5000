@@ -13,6 +13,7 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
 
         self._createWidgets()
         self._layoutWidgets()
+        self.resetButtons()
 
     def _createWidgets(self):
         # Bed widgets
@@ -22,7 +23,6 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
         self.bedHeaterOnButton = QtWidgets.QRadioButton('On')
         self.bedHeaterOnButton.toggled.connect(self._requestBedHeaterChange)
         self.bedHeaterOffButton = QtWidgets.QRadioButton('Off')
-        self.bedHeaterOffButton.setChecked(True)
 
         # Bed button group
         self.bedHeaterButtonGroup = QtWidgets.QButtonGroup()
@@ -36,7 +36,6 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
         self.nozzleHeaterOnButton = QtWidgets.QRadioButton('On')
         self.nozzleHeaterOnButton.toggled.connect(self._requestNozzleHeaterChange)
         self.nozzleHeaterOffButton = QtWidgets.QRadioButton('Off')
-        self.nozzleHeaterOffButton.setChecked(True)
 
         # Nozzle button group
         self.nozzleHeaterButtonGroup = QtWidgets.QButtonGroup()
@@ -63,6 +62,10 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(groupBox)
         self.setLayout(layout)
+
+    def resetButtons(self):
+        self.nozzleHeaterOffButton.setChecked(True)
+        self.bedHeaterOffButton.setChecked(True)
 
     def _requestBedHeaterChange(self):
         self.bedHeaterChanged.emit(self.bedHeaterOnButton.isChecked(),
