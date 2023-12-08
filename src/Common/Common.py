@@ -13,6 +13,19 @@ def printersDir():
     parentDir = pathlib.Path(sys.executable).parent if getattr(sys, 'frozen', False) else baseDir()
     return parentDir / 'Printers'
 
+def toArgumentString(args, kwargs):
+    arguments = ''
+
+    if len(args) > 0:
+        arguments = ', '.join(f'{v}' for v in args)
+
+    if len(kwargs) > 0:
+        if len(arguments) > 0:
+            arguments += ', '
+        arguments += ", ".join(f'{k}={v}' for k, v in kwargs.items())
+
+    return arguments
+
 def configureLogging(level=None, console=False, file=None):
     LOGGING_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 

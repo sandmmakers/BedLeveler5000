@@ -1,20 +1,8 @@
 from .Common import LOG_ALL
+from .Common import toArgumentString
 import functools
 import logging
 import types
-
-def toArgumentString(args, kwargs):
-    arguments = ''
-
-    if len(args) > 0:
-        arguments = ', '.join(f'{v}' for v in args)
-
-    if len(kwargs) > 0:
-        if len(arguments) > 0:
-            arguments += ', '
-        arguments += ", ".join(f'{k}={v}' for k, v in kwargs.items())
-
-    return arguments
 
 def loggedFunction(helper=None, level=logging.INFO):
     assert callable(helper) or helper is None
