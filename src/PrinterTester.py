@@ -409,12 +409,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.start('getDefaultProbeXYSpeed')
 
     def startGetProbeSampleCount(self):
+        if self.autoClearCheckBox.isChecked():
+            self.logTextEdit.clear()
         self.logTextEdit.append(f'Probe sample count: {self.printer.getProbeSampleCount()}')
 
     def startGetProbeZHeight(self):
+        if self.autoClearCheckBox.isChecked():
+            self.logTextEdit.clear()
         self.logTextEdit.append(f'Probe Z-height: {self.printer.getProbeZHeight()}')
 
     def startGetProbeXYSpeed(self):
+        if self.autoClearCheckBox.isChecked():
+            self.logTextEdit.clear()
         self.logTextEdit.append(f'Probe XY speed: {self.printer.getProbeXYSpeed()}')
 
     def startProbe(self):
