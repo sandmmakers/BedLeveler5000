@@ -3,12 +3,14 @@ from ..CommandPrinter import CommandType
 from ..CommandPrinter import GetTemperaturesResult
 from ..CommandPrinter import GetProbeOffsetsResult
 from ..CommandPrinter import GetCurrentPositionResult
+from ..CommandPrinter import GetTravelBoundsResult
 from ..CommandPrinter import GetMeshCoordinatesResult
 from ..CommandPrinter import ProbeResult
 from .CommandConnection import CommandConnection
 
 from PySide6 import QtCore
 from PySide6 import QtNetwork
+import logging
 import statistics
 
 class Marlin2Printer(CommandPrinter):
@@ -46,11 +48,33 @@ class Marlin2Printer(CommandPrinter):
         machine.finished.connect(self._finished)
         machine.errorOccurred.connect(self._errorOccurred)
 
-        machineSignal = getattr(machine, signalName)
-        machineSignal.connect(getattr(self, signalName))
+        if machineClass != InitMachine:
+            machineSignal = getattr(machine, signalName)
+            machineSignal.connect(getattr(self, signalName))
+        else:
+            machine.inited.connect(self._inited)
 
         self.machineSet.add(machine)
+        logging.debug(f'Starting {machineClass} with id: {id_}, context: {context}')
         machine.start()
+
+    def _inited(self, id_, context):
+        machine = self.sender()
+
+        # Probe offsets
+        self._probeXOffset = machine.probeXOffset
+        self._probeYOffset = machine.probeYOffset
+        self._probeZOffset = machine.probeZOffset
+
+        # Travel bounds
+        self._travelBoundsMinX = machine.travelBoundsMinX
+        self._travelBoundsMaxX = machine.travelBoundsMaxX
+        self._travelBoundsMinY = machine.travelBoundsMinY
+        self._travelBoundsMaxY = machine.travelBoundsMaxY
+        self._travelBoundsMinZ = machine.travelBoundsMinZ
+        self._travelBoundsMaxZ = machine.travelBoundsMaxZ
+
+        self.inited.emit(id_, context)
 
     def _init(self, id_, *, context):
         self._probeSampleCount = self.DEFAULT_PROBE_SAMPLE_COUNT
@@ -69,6 +93,9 @@ class Marlin2Printer(CommandPrinter):
 
     def _getCurrentPosition(self, id_, *, context):
         self._createMachine(GetCurrentPositionMachine, 'gotCurrentPosition', id_, context)
+
+    def _getTravelBounds(self, id_, *, context):
+        self._createMachine(GetTravelBoundsMachine, 'gotTravelBounds', id_, context)
 
     def _getMeshCoordinates(self, id_, *, context):
         self._createMachine(GetMeshCoordinatesMachine, 'gotMeshCoordinates', id_, context)
@@ -178,10 +205,29 @@ class InitMachine(Marlin2Machine):
         super().__init__(commandConnection, id_, context, parent)
 
     def start(self):
-        self.setTransition(self._enterDone)
+        self.setTransition(self._enterGetProbeOffsets)
         self.setCommand(self.commandConnection.sendG28())
 
+    def _enterGetProbeOffsets(self, reply):
+        self.setTransition(self._enterGetTravelBounds)
+        self.setCommand(self.commandConnection.sendM851())
+
+    def _enterGetTravelBounds(self, reply):
+        self.probeXOffset = reply['x']
+        self.probeYOffset = reply['y']
+        self.probeZOffset = reply['z']
+
+        self.setTransition(self._enterDone)
+        self.setCommand(self.commandConnection.sendM211())
+
     def _enterDone(self, reply):
+        self.travelBoundsMinX = reply['minX']
+        self.travelBoundsMaxX = reply['maxX']
+        self.travelBoundsMinY = reply['minY']
+        self.travelBoundsMaxY = reply['maxY']
+        self.travelBoundsMinZ = reply['minZ']
+        self.travelBoundsMaxZ = reply['maxZ']
+
         self.finish(self.inited)
 
 class HomeMachine(Marlin2Machine):
@@ -253,6 +299,25 @@ class GetCurrentPositionMachine(Marlin2Machine):
                                                                       z = reply['z'],
                                                                       e = reply['e']))
 
+class GetTravelBoundsMachine(Marlin2Machine):
+    TYPE = CommandType.GET_TRAVEL_BOUNDS
+    gotTravelBounds = QtCore.Signal(str, dict, GetTravelBoundsResult)
+
+    def __init__(self, commandConnection, id_, context, parent=None):
+        super().__init__(commandConnection, id_, context, parent)
+
+    def start(self):
+        self.setTransition(self._enterDone)
+        self.setCommand(self.commandConnection.sendM211())
+
+    def _enterDone(self, reply):
+        self.finish(self.gotTravelBounds, GetTravelBoundsResult(minX = reply['minX'],
+                                                                maxX = reply['maxX'],
+                                                                minY = reply['minY'],
+                                                                maxY = reply['maxY'],
+                                                                minZ = reply['minZ'],
+                                                                maxZ = reply['maxZ']))
+
 class GetMeshCoordinatesMachine(Marlin2Machine):
     TYPE = CommandType.GET_MESH_COORDINATES
     gotMeshCoordinates = QtCore.Signal(str, dict, GetMeshCoordinatesResult)
@@ -266,10 +331,10 @@ class GetMeshCoordinatesMachine(Marlin2Machine):
         self.speed = 5000
 
     def start(self):
-        self.setTransition(self._enterGetProbeOffsets)
+        self.setTransition(self._enterGetMeshSize)
         self.setCommand(self.commandConnection.sendM420(v=True))
 
-    def _enterGetProbeOffsets(self, reply):
+    def _enterGetMeshSize(self, reply):
         """ Currently only supports bilinear bed leveling. """
 
         # Determine xCount and yCount
@@ -313,8 +378,8 @@ class GetMeshCoordinatesMachine(Marlin2Machine):
 
     def _enterMoveToBackRightPosition(self, reply):
         try:
-            self.frontLeftX = reply['x'] #- self.offsetX
-            self.frontLeftY = reply['y'] #- self.offsetY
+            self.frontLeftX = reply['x']
+            self.frontLeftY = reply['y']
         except:
             self.reportError('Failed to parse result of M114 command.')
             return

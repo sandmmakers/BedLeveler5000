@@ -14,6 +14,7 @@ from .Commands.CommandM105 import CommandM105
 from .Commands.CommandM114 import CommandM114
 from .Commands.CommandM118 import CommandM118
 from .Commands.CommandM140 import CommandM140
+from .Commands.CommandM211 import CommandM211
 from .Commands.CommandM400 import CommandM400
 from .Commands.CommandM420 import CommandM420
 from .Commands.CommandM851 import CommandM851
@@ -35,6 +36,7 @@ class CommandConnection(SerialConnection):
     finishedM114 = QtCore.Signal(CommandBase)
     finishedM118 = QtCore.Signal(CommandBase)
     finishedM140 = QtCore.Signal(CommandBase)
+    finishedM211 = QtCore.Signal(CommandBase)
     finishedM400 = QtCore.Signal(CommandBase)
     finishedM420 = QtCore.Signal(CommandBase)
     finishedM851 = QtCore.Signal(CommandBase)
@@ -109,6 +111,9 @@ class CommandConnection(SerialConnection):
 
     def sendM140(self, *args, **kwargs):
         return self._createCommand(CommandM140, *args, **kwargs)
+
+    def sendM211(self, *args, **kwargs):
+        return self._createCommand(CommandM211, *args, **kwargs)
 
     def sendM400(self, *args, **kwargs):
         return self._createCommand(CommandM400, *args, **kwargs)
@@ -295,6 +300,13 @@ if __name__ == '__main__':
             self.startM140SSpinBox.setMinimum(0)
             self.startM140SSpinBox.setMaximum(500)
 
+            self.startM211Button = QtWidgets.QPushButton('M211')
+            self.startM211Button.clicked.connect(self.startM211)
+            self.startM211SCheckBox = QtWidgets.QCheckBox()
+            self.startM211SComboBox = QtWidgets.QComboBox()
+            self.startM211SComboBox.addItem('Enable', 1)
+            self.startM211SComboBox.addItem('Disable', 0)
+
             self.startM400Button = QtWidgets.QPushButton('M400')
             self.startM400Button.clicked.connect(self.startM400)
 
@@ -457,6 +469,13 @@ if __name__ == '__main__':
             startM140Layout.addWidget(self.startM140SSpinBox)
             startM140Layout.addStretch()
 
+            startM211Layout = QtWidgets.QHBoxLayout()
+            startM211Layout.addWidget(self.startM211Button)
+            startM211Layout.addWidget(QtWidgets.QLabel('S:'))
+            startM211Layout.addWidget(self.startM211SCheckBox)
+            startM211Layout.addWidget(self.startM211SComboBox)
+            startM211Layout.addStretch()
+
             startM400Layout = QtWidgets.QHBoxLayout()
             startM400Layout.addWidget(self.startM400Button)
             startM400Layout.addStretch()
@@ -508,6 +527,7 @@ if __name__ == '__main__':
             controlsLayout.addLayout(startM114Layout)
             controlsLayout.addLayout(startM118Layout)
             controlsLayout.addLayout(startM140Layout)
+            controlsLayout.addLayout(startM211Layout)
             controlsLayout.addLayout(startM400Layout)
             controlsLayout.addLayout(startM420Layout)
             controlsLayout.addLayout(startM851Layout)
@@ -527,8 +547,8 @@ if __name__ == '__main__':
         def makeConnections(self):
             assert(len(self.qtConnections) == 0)
 
-            self.qtConnections.append(self.connection.wrote.connect(lambda line: self.logTextEdit.append(f'Wrote: ->{line}<-')))
-            self.qtConnections.append(self.connection.received.connect(lambda line: self.logTextEdit.append(f'Received line: ->{line}<-')))
+            ###self.qtConnections.append(self.connection.wrote.connect(lambda line: self.logTextEdit.append(f'Wrote: ->{line}<-')))
+            ###self.qtConnections.append(self.connection.received.connect(lambda line: self.logTextEdit.append(f'Received line: ->{line}<-')))
 
             self.qtConnections.append(self.connection.errorOccurred.connect(self.logErrorOccurred))
             self.qtConnections.append(self.connection.finished.connect(lambda command: self.logFinished('finished', command)))
@@ -543,6 +563,7 @@ if __name__ == '__main__':
             self.qtConnections.append(self.connection.finishedM114.connect(lambda command: self.logFinished('finishedM114', command)))
             self.qtConnections.append(self.connection.finishedM118.connect(lambda command: self.logFinished('finishedM118', command)))
             self.qtConnections.append(self.connection.finishedM140.connect(lambda command: self.logFinished('finishedM140', command)))
+            self.qtConnections.append(self.connection.finishedM211.connect(lambda command: self.logFinished('finishedM211', command)))
             self.qtConnections.append(self.connection.finishedM400.connect(lambda command: self.logFinished('finishedM400', command)))
             self.qtConnections.append(self.connection.finishedM420.connect(lambda command: self.logFinished('finishedM420', command)))
             self.qtConnections.append(self.connection.finishedM851.connect(lambda command: self.logFinished('finishedM851', command)))
@@ -633,6 +654,10 @@ if __name__ == '__main__':
             self.start('M140',
                        i=self.startM140ISpinBox.value() if self.startM140ICheckBox.isChecked() else None,
                        s=self.startM140SSpinBox.value() if self.startM140SCheckBox.isChecked() else None)
+
+        def startM211(self):
+            self.start('M211',
+                       s=self.startM211SComboBox.currentData() if self.startM211SCheckBox.isChecked() else None)
 
         def startM400(self):
             self.start('M400')

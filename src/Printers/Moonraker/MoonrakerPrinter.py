@@ -3,6 +3,7 @@ from Printers.CommandPrinter import CommandType
 from Printers.CommandPrinter import GetTemperaturesResult
 from Printers.CommandPrinter import GetProbeOffsetsResult
 from Printers.CommandPrinter import GetCurrentPositionResult
+from Printers.CommandPrinter import GetTravelBoundsResult
 from Printers.CommandPrinter import GetMeshCoordinatesResult
 from Printers.CommandPrinter import ProbeResult
 from Common.Common import LOG_ALL
@@ -44,12 +45,34 @@ class MoonrakerPrinter(CommandPrinter):
         machine.finished.connect(self._finished)
         machine.errorOccurred.connect(self._errorOccurred)
 
-        machineSignal = getattr(machine, signalName)
-        machineSignal.connect(getattr(self, signalName))
+        if machineClass != InitMachine:
+            machineSignal = getattr(machine, signalName)
+            machineSignal.connect(getattr(self, signalName))
+        else:
+            machine.inited.connect(self._inited)
+
         self.machineSet.add(machine)
 
         logging.debug(f'Starting {machineClass} with id: {id_}, context: {context}')
         machine.start()
+
+    def _inited(self, id_, context):
+        machine = self.sender()
+        self._probeSampleCount = machine.probeSampleCount
+        self._probeZHeight = machine.probeZHeight
+        self._probeXYSpeed = machine.probeXYSpeed
+        self._probeXOffset = machine.probeXOffset
+        self._probeYOffset = machine.probeYOffset
+        self._probeZOffset = machine.probeZOffset
+
+        self._travelBoundsMinX = machine.travelBoundsMinX
+        self._travelBoundsMaxX = machine.travelBoundsMaxX
+        self._travelBoundsMinY = machine.travelBoundsMinY
+        self._travelBoundsMaxY = machine.travelBoundsMaxY
+        self._travelBoundsMinZ = machine.travelBoundsMinZ
+        self._travelBoundsMaxZ = machine.travelBoundsMaxZ
+
+        self.inited.emit(id_, context)
 
     def _init(self, id_, *, context):
         self._createMachine(InitMachine, 'inited', id_, context)
@@ -65,6 +88,9 @@ class MoonrakerPrinter(CommandPrinter):
 
     def _getCurrentPosition(self, id_, *, context):
         self._createMachine(GetCurrentPositionMachine, 'gotCurrentPosition', id_, context)
+
+    def _getTravelBounds(self, id_, *, context):
+        self._createMachine(GetTravelBoundsMachine, 'gotTravelBounds', id_, context)
 
     def _getMeshCoordinates(self, id_, *, context):
         self._createMachine(GetMeshCoordinatesMachine, 'gotMeshCoordinates', id_, context)
@@ -98,13 +124,9 @@ class MoonrakerPrinter(CommandPrinter):
         if machine not in self.machineSet:
             return
 
-        if isinstance(machine, InitMachine):
-            self._probeSampleCount = machine.probeSampleCount
-            self._probeZHeight = machine.probeZHeight
-            self._probeXYSpeed = machine.probeXYSpeed
-
-        self.machineSet.remove(machine)
         self.finished.emit(machine.TYPE, machine.id_, machine.context, machine.error, response)
+        self.machineSet.remove(machine)
+        # TODO: Determine if deleteLater is needed
 
     def _errorOccurred(self, machine, message):
         self.errorOccurred.emit(machine.TYPE, machine.id_, machine.context, message)
@@ -267,16 +289,32 @@ class MoonrakerMachine(QtCore.QObject):
                 raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, invalid value for \'{section.name}:{valueName}\' field in \'printer.cfg\'.')
         return value
 
+    @classmethod
+    def _getConfigSectionProbeOffsets(cls, probe):
+        return (cls._getConfigSectionValue(probe, 'x_offset', float, default=0.0),
+                cls._getConfigSectionValue(probe, 'y_offset', float, default=0.0),
+                cls._getConfigSectionValue(probe, 'z_offset', float))
+
+    @classmethod
+    def _getConfigSectionTravelBounds(cls, config):
+        stepperX = cls._getConfigSection(config, 'stepper_x')
+        stepperY = cls._getConfigSection(config, 'stepper_y')
+        stepperZ = cls._getConfigSection(config, 'stepper_z')
+
+        minX = cls._getConfigSectionValue(stepperX, 'position_min', float, default=0.0)
+        minY = cls._getConfigSectionValue(stepperY, 'position_min', float, default=0.0)
+        minZ = cls._getConfigSectionValue(stepperZ, 'position_min', float, default=0.0)
+        maxX = cls._getConfigSectionValue(stepperX, 'position_max', float)
+        maxY = cls._getConfigSectionValue(stepperY, 'position_max', float)
+        maxZ = cls._getConfigSectionValue(stepperZ, 'position_max', float)
+        return (minX, maxX, minY, maxY, minZ, maxZ)
+
 class InitMachine(MoonrakerMachine):
     TYPE = CommandType.INIT
     inited = QtCore.Signal(str, dict)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
-
-        self.probeSampleCount = None
-        self.probeZHeight = None
-        self.probeXYSpeed = None
 
     def start(self):
         self.setTransition(self._enterGetConfigFile)
@@ -302,6 +340,12 @@ class InitMachine(MoonrakerMachine):
 
         # Get probe XY speed
         self.probeXYSpeed = self._getConfigSectionValue(bedMesh, 'speed', float, 50)
+
+        # Get probe offsets
+        self.probeXOffset, self.probeYOffset, self.probeZOffset = self._getConfigSectionProbeOffsets(probe)
+
+        # Get travel bounds
+        self.travelBoundsMinX, self.travelBoundsMaxX, self.travelBoundsMinY, self.travelBoundsMaxY, self.travelBoundsMinZ, self.travelBoundsMaxZ = self._getConfigSectionTravelBounds(config)
 
         # Done
         self.finish(self.inited)
@@ -371,9 +415,7 @@ class GetProbeOffsetsMachine(MoonrakerMachine):
         config = self._getConfig(replyJson)
         probe = self._getConfigSection(config, 'probe')
 
-        xOffset = self._getConfigSectionValue(probe, 'x_offset', float, default=0.0)
-        yOffset = self._getConfigSectionValue(probe, 'y_offset', float, default=0.0)
-        zOffset = self._getConfigSectionValue(probe, 'z_offset', float)
+        xOffset, yOffset, zOffset = self._getConfigSectionProbeOffsets(probe)
 
         # Finish
         self.finish(self.gotProbeOffsets,
@@ -415,6 +457,28 @@ class GetCurrentPositionMachine(MoonrakerMachine):
                                              y = values[1],
                                              z = values[2],
                                              e = values[3]))
+
+class GetTravelBoundsMachine(MoonrakerMachine):
+    TYPE = CommandType.GET_TRAVEL_BOUNDS
+    gotTravelBounds = QtCore.Signal(str, dict, GetTravelBoundsResult)
+
+    def __init__(self, networkAccessManager, host, id_, context, parent=None):
+        super().__init__(networkAccessManager, host, id_, context, parent)
+
+    def start(self):
+        self.setTransition(self._enterDone)
+        self.get('/printer/objects/query?configfile')
+
+    def _enterDone(self, replyJson):
+        config = self._getConfig(replyJson)
+        minX, maxX, minY, maxY, minZ, maxZ = self._getConfigSectionTravelBounds(config)
+        self.finish(self.gotTravelBounds,
+                    GetTravelBoundsResult(minX = minX,
+                                          maxX = maxX,
+                                          minY = minY,
+                                          maxY = maxY,
+                                          minZ = minZ,
+                                          maxZ = maxZ))
 
 class GetMeshCoordinatesMachine(MoonrakerMachine):
     TYPE = CommandType.GET_MESH_COORDINATES
@@ -559,8 +623,6 @@ class ProbeMachine(MoonrakerMachine):
         self.sampleCount = sampleCount
         self.xySpeed = xySpeed
         self.probeHeight = probeHeight
-        self.xOffset = None
-        self.yOffset = None
 
     def start(self):
         self.setTransition(self._enterRaise)
@@ -570,8 +632,7 @@ class ProbeMachine(MoonrakerMachine):
         config = self._getConfig(replyJson)
         probe = self._getConfigSection(config, 'probe')
 
-        self.xOffset = self._getConfigSectionValue(probe, 'x_offset', float, default=0.0)
-        self.yOffset = self._getConfigSectionValue(probe, 'y_offset', float, default=0.0)
+        self.probeXOffset, self.probeYOffset, _ = self._getConfigSectionProbeOffsets(probe)
 
         self.setTransition(self._enterWaitForRaise)
         self.getGCode(f'G0 Z{self.probeHeight}')
@@ -584,7 +645,7 @@ class ProbeMachine(MoonrakerMachine):
     def _enterMove(self, replyJson):
         self._verifyOk(replyJson, 'Probe failed waiting for the toolhead to rise.')
         self.setTransition(self._enterWaitForMove)
-        self.getGCode(f'G0 X{self.x - self.xOffset} Y{self.y - self.yOffset} F{60*self.xySpeed}')
+        self.getGCode(f'G0 X{self.x - self.probeXOffset} Y{self.y - self.probeYOffset} F{60*self.xySpeed}')
 
     def _enterWaitForMove(self, replyJson):
         self._verifyOk(replyJson, 'Probe failed while moving toolhead.')

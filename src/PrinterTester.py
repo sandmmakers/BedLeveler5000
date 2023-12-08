@@ -66,6 +66,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.getCurrentPositionButton = QtWidgets.QPushButton('GetCurrentPosition')
         self.getCurrentPositionButton.clicked.connect(self.startGetCurrentPosition)
 
+        # Get travel bounds
+        self.getTravelBoundsButton = QtWidgets.QPushButton('GetTravelBounds')
+        self.getTravelBoundsButton.clicked.connect(self.startGetTravelBounds)
+
         # Get mesh coordinates
         self.getMeshCoordinatesButton = QtWidgets.QPushButton('GetMeshCoordinates')
         self.getMeshCoordinatesButton.clicked.connect(self.startGetMeshCoordinates)
@@ -183,6 +187,7 @@ class MainWindow(QtWidgets.QMainWindow):
         simpleLayout.addWidget(self.getTemperaturesButton)
         simpleLayout.addWidget(self.getProbeOffsetsButton)
         simpleLayout.addWidget(self.getCurrentPositionButton)
+        simpleLayout.addWidget(self.getTravelBoundsButton)
         simpleLayout.addWidget(self.getMeshCoordinatesButton)
         simpleLayout.addWidget(self.abortButton)
         simpleLayout.addStretch()
@@ -308,6 +313,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.qtConnections.append(self.printer.gotTemperatures.connect(lambda id_, context, result: self.logTextEdit.append(f'Got temperatures ({id_}) : {context} : {result}')))
         self.qtConnections.append(self.printer.gotProbeOffsets.connect(lambda id_, context, result: self.logTextEdit.append(f'Got probe offsets ({id_}) : {context} : {result}')))
         self.qtConnections.append(self.printer.gotCurrentPosition.connect(lambda id_, context, result: self.logTextEdit.append(f'Got current position ({id_}) : {context} : {result}')))
+        self.qtConnections.append(self.printer.gotTravelBounds.connect(lambda id_, context, result: self.logTextEdit.append(f'Got travel bounds ({id_}) : {context} : {result}')))
         self.qtConnections.append(self.printer.gotMeshCoordinates.connect(lambda id_, context, result: self.logTextEdit.append(f'Got mesh coordinates ({id_}) : {context} : {result}')))
         self.qtConnections.append(self.printer.bedTemperatureSet.connect(lambda id_, context: self.logTextEdit.append(f'Bed temperature set ({id_}) : {context}')))
         self.qtConnections.append(self.printer.nozzleTemperatureSet.connect(lambda id_, context: self.logTextEdit.append(f'Nozzle temperature set ({id_}) : {context}')))
@@ -374,6 +380,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def startGetCurrentPosition(self):
         self.start('getCurrentPosition')
+
+    def startGetTravelBounds(self):
+        self.start('getTravelBounds')
 
     def startGetMeshCoordinates(self):
         self.start('getMeshCoordinates')

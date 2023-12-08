@@ -255,11 +255,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().setNozzleTemp(actual=result.toolActual, desired=result.toolDesired, power=result.toolPower)
 
     def _processInitResults(self, id_, context):
+        for point in self.printerInfo.manualProbePoints:
+            if not self.printer.isProbeable(x=point.x, y=point.y):
+                self._fatalError(f'Manual probe point ({point.x}, {point.y}) is outside the probeable area.'
+                                 f' Either the probe point coordinates are wrong or the printer\'s X or Y'
+                                 f' axis bounds are set incorrectly.')
+
         self.printer.getMeshCoordinates(self._createId('getMeshCoordinates'))
         self.updateState(self.State.INITIALIZING_MESH)
 
     def _initializeMesh(self, id_, context, result):
         self.meshCoordinates = result.meshCoordinates
+        corners = [self.meshCoordinates[0][0],
+                   self.meshCoordinates[0][result.columnCount-1],
+                   self.meshCoordinates[result.rowCount-1][0],
+                   self.meshCoordinates[result.rowCount-1][result.columnCount-1]]
+
+        for corner in corners:
+            if not self.printer.isProbeable(x=corner.x, y=corner.y):
+                self._fatalError(f'Mesh corner point ({corner.x}, {corner.y}) is outside the probeable area.'
+                                 f' Either the mesh is misconfigured or the printer\'s X or Y'
+                                 f' axis bounds are set incorrectly.')
+
         self.meshWidget.resizeMesh(result.rowCount,
                                    result.columnCount)
         self.updateState(self.State.CONNECTED)

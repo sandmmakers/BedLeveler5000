@@ -13,6 +13,7 @@ class CommandType(enum.StrEnum):
     GET_TEMPERATURES = 'getTemperatures'
     GET_PROBE_OFFSETS = 'getProbeOffsets'
     GET_CURRENT_POSITION = 'getCurrentPosition'
+    GET_TRAVEL_BOUNDS = 'getTravelBounds'
     GET_MESH_COORDINATES = 'getMeshCoordinates'
     SET_BED_TEMPERATURE = 'setBedTemperature'
     SET_NOZZLE_TEMPERATURE = 'setNozzleTemperature'
@@ -46,6 +47,14 @@ class GetCurrentPositionResult(NamedTuple):
     z: float
     e: float
 
+class GetTravelBoundsResult(NamedTuple):
+    minX: float
+    maxX: float
+    minY: float
+    maxY: float
+    minZ: float
+    maxZ: float
+
 class GetMeshCoordinatesResult(NamedTuple):
     rowCount: int
     columnCount: int
@@ -67,6 +76,7 @@ class CommandPrinter(Printer):
     gotTemperatures = QtCore.Signal(str, dict, GetTemperaturesResult) # id, context, result
     gotProbeOffsets = QtCore.Signal(str, dict, GetProbeOffsetsResult) # id, context, result
     gotCurrentPosition = QtCore.Signal(str, dict, GetCurrentPositionResult) # id, context, result
+    gotTravelBounds = QtCore.Signal(str, dict, GetTravelBoundsResult) # id, context, result
     gotMeshCoordinates = QtCore.Signal(str, dict, GetMeshCoordinatesResult) # id, context, result
     bedTemperatureSet = QtCore.Signal(str, dict) # id, context
     nozzleTemperatureSet = QtCore.Signal(str, dict) # id, context
@@ -82,10 +92,23 @@ class CommandPrinter(Printer):
         # Get logger
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        # Defaults
+        # Defaults (invalid until init is called)
         self._probeSampleCount = None
         self._probeXYSpeed = None
         self._probeZHeight = None
+
+        # Probe offsets (invalid until init is called)
+        self._probeXOffset = None
+        self._probeYOffset = None
+        self._probeZOffset = None
+
+        # Travel bounds (invalid until init is called)
+        self._travelBoundsMinX = None
+        self._travelBoundsMaxX = None
+        self._travelBoundsMinY = None
+        self._travelBoundsMaxY = None
+        self._travelBoundsMinZ = None
+        self._travelBoundsMaxZ = None
 
     @loggedFunction
     def abort(self):
@@ -164,6 +187,15 @@ class CommandPrinter(Printer):
 
     @abc.abstractmethod
     def _getCurrentPosition(self, id_, *, context):
+        raise NotImplementedError
+
+    # Get travel bounds
+    @loggedFunction
+    def getTravelBounds(self, id_, *, context=None):
+        self._getTravelBounds(id_=id_, context=context)
+
+    @abc.abstractmethod
+    def _getTravelBounds(self, id_, *, context):
         raise NotImplementedError
 
     # Get mesh coordinates
@@ -260,3 +292,14 @@ class CommandPrinter(Printer):
                                         minY = minY,
                                         maxY = maxY,
                                         meshCoordinates = meshCoordinates)
+
+    @loggedFunction(level='debug')
+    def isProbeable(self, *, x, y):
+        assert self._probeXOffset is not None
+        assert self._probeYOffset is not None
+
+        probeX = x - self._probeXOffset
+        probeY = y - self._probeYOffset
+
+        return self._travelBoundsMinX <= x <= self._travelBoundsMaxX and \
+               self._travelBoundsMinY <= y <= self._travelBoundsMaxY
