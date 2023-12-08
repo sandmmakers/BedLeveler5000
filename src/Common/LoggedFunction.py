@@ -22,7 +22,7 @@ def loggedFunction(helper=None, level=logging.INFO):
         level == LOG_ALL
     elif isinstance(level, str):
         upper = level.upper()
-        level = LOG_ALL if upper == 'ALL' else getattr(logging, level.upper())
+        level = LOG_ALL if upper == 'ALL' else getattr(logging, upper)
 
     def wrap(function):
         @functools.wraps(function)
