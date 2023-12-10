@@ -17,6 +17,7 @@ to use **Bed Leveler 5000**.
 ## Documentation
 - **Bed Leveler 5000** Klipper support video: [Bed Leveler 5000 Klipper support][BedLeveler5000KlipperVideo]
 - **Bed Leveler 5000** introduction video: [Bed Leveler 5000][BedLeveler5000Video]
+- **Printer Info Wizard** Klipper support video: [Printer Info Wizard Klipper support][PrinterInfoWizardKlipperVideo]
 - **Printer Info Wizard** introduction video: [Printer Info Wizard][PrinterInfoWizardVideo]
 - **Inspector G-code** introduction video: [Inspector G-code][InspectorG-code]
 - Homepage: https://sandmmakers.com/Projects/BedLeveler5000
@@ -70,6 +71,7 @@ GPLv3
    [git-repo-url]: <https://github.com/sandmmakers/BedLeveler5000.git>
    [BedLeveler5000KlipperVideo]: <https://youtu.be/JBGN3U0C2LM>
    [BedLeveler5000Video]: <https://youtu.be/j5rzlHdtJAo>
+   [PrinterInfoWizardKlipperVideo]: <https://youtu.be/VC4FoqCr5-g>
    [PrinterInfoWizardVideo]: <https://youtu.be/vVYRg6_kZsc>
    [InspectorG-code]: <https://youtu.be/EVntFYltG1U>
    [PySide6]: <https://pypi.org/project/PySide6>
