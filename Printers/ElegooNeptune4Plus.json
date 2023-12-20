@@ -1,0 +1,56 @@
+{
+    "version": 2,
+    "displayName": "Neptune 4 Plus",
+    "connectionMode": "Moonraker",
+    "connection": {},
+    "manualProbePoints": [{
+                              "name": "1",
+                              "row": 2,
+                              "column": 0,
+                              "x": 35.0,
+                              "y": 24.0
+                          },
+                          {
+                              "name": "2",
+                              "row": 1,
+                              "column": 0,
+                              "x": 35.0,
+                              "y": 155.0
+                          },
+                          {
+                              "name": "3",
+                              "row": 0,
+                              "column": 0,
+                              "x": 35.0,
+                              "y": 290.0
+                          },
+                          {
+                              "name": "4",
+                              "row": 0,
+                              "column": 2,
+                              "x": 290.0,
+                              "y": 290.0
+                          },
+                          {
+                              "name": "5",
+                              "row": 1,
+                              "column": 2,
+                              "x": 290.0,
+                              "y": 155.0
+                          },
+                          {
+                              "name": "6",
+                              "row": 2,
+                              "column": 2,
+                              "x": 290.0,
+                              "y": 35.0
+                          },
+                          {
+                              "name": "H",
+                              "row": 1,
+                              "column": 1,
+                              "x": 162.5,
+                              "y": 162.5
+                          }
+                         ]
+}
