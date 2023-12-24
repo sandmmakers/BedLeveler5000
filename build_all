@@ -4,11 +4,54 @@ set -x -o nounset -o pipefail -o errexit
 TOP_LEVEL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 BUILD_DIR="${TOP_LEVEL_DIR}/Build"
 INSTALL_DIR="${TOP_LEVEL_DIR}/Install"
+SUBMODULES_DIR="${TOP_LEVEL_DIR}/Submodules"
+PYINSTALLER_DIR="${SUBMODULES_DIR}/Pyinstaller"
+BUILD_VENV="${BUILD_DIR}/build_venv"
+REQUIREMENTS_TXT="${TOP_LEVEL_DIR}/requirements.txt"
 
-rm -rf ${BUILD_DIR}
-rm -rf ${INSTALL_DIR}
+KERNEL_NAME="$(uname -s)"
+case "${KERNEL_NAME}" in
+    M*) PYTHON_EXE=python
+        ACTIVATE_PATH="${BUILD_VENV}/Scripts/activate"
+        WINDOWS_SPECIFIC=true
+        ;;
+    *)  PYTHON_EXE=python3
+        ACTIVATE_PATH="${BUILD_VENV}/bin/activate"
+        WINDOWS_SPECIFIC=false
+esac
 
+rm -rf "${BUILD_DIR}"
+rm -rf "${INSTALL_DIR}"
+
+# Create BUILD_DIR
+mkdir -p "${BUILD_DIR}"
+
+# Create a clean venv
+${PYTHON_EXE} -m venv "${BUILD_VENV}"
+source "${ACTIVATE_PATH}"
+${PYTHON_EXE} -m pip install -r "${REQUIREMENTS_TXT}"
+
+# Static analysis
+pylint --rcfile .pylintrc --errors-only src
+
+# Ensure pip cache is empty
+pip cache purge
+
+# Build and install Pyinstaller
+cp -r "${PYINSTALLER_DIR}" "${BUILD_DIR}"
 (
-    pylint --rcfile .pylintrc --errors-only src
-    pyinstaller BedLeveler5000.spec --workpath=${BUILD_DIR} --distpath=${INSTALL_DIR}
+    cd "${BUILD_DIR}/Pyinstaller/bootloader"
+    ${PYTHON_EXE} ./waf distclean all
+    cd ..
+    pip install .
 )
+
+if [ ${WINDOWS_SPECIFIC} = true ]; then
+    # Create version files
+    ./CreateVersionFile.py src/BedLeveler5000.py "${BUILD_DIR}"
+    ./CreateVersionFile.py src/PrinterInfoWizard.py "${BUILD_DIR}"
+    ./CreateVersionFile.py src/InspectorG-Code.py "${BUILD_DIR}"
+    ./CreateVersionFile.py src/PrinterTester.py "${BUILD_DIR}"
+fi
+
+pyinstaller BedLeveler5000.spec --workpath="${BUILD_DIR}" --distpath="${INSTALL_DIR}"

@@ -4,10 +4,7 @@ BedLeveler5000_a = Analysis(
     ['src/BedLeveler5000.py'],
     pathex=[],
     binaries=[],
-    datas=[('Printers', 'Printers'),
-           ('Resources', 'Resources'),
-           ('Third Party', 'Third Party'),
-           ('LICENSE', '.')],
+    datas=[('Resources', 'Resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -16,7 +13,7 @@ BedLeveler5000_a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    noarchive=False,
+    noarchive=True,
 )
 BedLeveler5000_pyz = PYZ(BedLeveler5000_a.pure, BedLeveler5000_a.zipped_data, cipher=block_cipher)
 
@@ -29,24 +26,22 @@ BedLeveler5000_exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='Resources/Icon-128x128.png'
+    icon='Resources/Icon-128x128.png',
+    version='Build/BedLeveler5000_version.py',
 )
 
 PrinterInfoWizard_a = Analysis(
     ['src/PrinterInfoWizard.py'],
     pathex=[],
     binaries=[],
-    datas=[('Printers', 'Printers'),
-           ('Resources', 'Resources'),
-           ('Third Party', 'Third Party'),
-           ('LICENSE', '.')],
+    datas=[('Resources', 'Resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -55,7 +50,7 @@ PrinterInfoWizard_a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    noarchive=False,
+    noarchive=True,
 )
 PrinterInfoWizard_pyz = PYZ(PrinterInfoWizard_a.pure, PrinterInfoWizard_a.zipped_data, cipher=block_cipher)
 
@@ -68,24 +63,22 @@ PrinterInfoWizard_exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='Resources/PrinterInfoWizard-128x128.png'
+    icon='Resources/PrinterInfoWizard-128x128.png',
+    version='Build/PrinterInfoWizard_version.py',
 )
 
 Inspector_G_code_a = Analysis(
     ['src/InspectorG-code.py'],
     pathex=[],
     binaries=[],
-    datas=[('Printers', 'Printers'),
-           ('Resources', 'Resources'),
-           ('Third Party', 'Third Party'),
-           ('LICENSE', '.')],
+    datas=[('Resources', 'Resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -94,7 +87,7 @@ Inspector_G_code_a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    noarchive=False,
+    noarchive=True,
 )
 Inspector_G_code_pyz = PYZ(Inspector_G_code_a.pure, Inspector_G_code_a.zipped_data, cipher=block_cipher)
 
@@ -107,24 +100,22 @@ Inspector_G_code_exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='Resources/InspectorG-code_Icon_128x128.png'
+    icon='Resources/InspectorG-code_Icon_128x128.png',
+    version='Build/InspectorG-Code_version.py',
 )
 
 PrinterTester_a = Analysis(
     ['src/PrinterTester.py'],
     pathex=[],
     binaries=[],
-    datas=[('Printers', 'Printers'),
-           ('Resources', 'Resources'),
-           ('Third Party', 'Third Party'),
-           ('LICENSE', '.')],
+    datas=[('Resources', 'Resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -133,7 +124,7 @@ PrinterTester_a = Analysis(
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
-    noarchive=False,
+    noarchive=True,
 )
 PrinterTester_pyz = PYZ(PrinterTester_a.pure, PrinterTester_a.zipped_data, cipher=block_cipher)
 
@@ -146,14 +137,15 @@ PrinterTester_exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='Resources/PrinterTester-128x128.png'
+    icon='Resources/PrinterTester-128x128.png',
+    version='Build/PrinterTester_version.py',
 )
 
 coll = COLLECT(
@@ -174,15 +166,16 @@ coll = COLLECT(
     PrinterTester_a.zipfiles,
     PrinterTester_a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name='BedLeveler5000',
 )
 
-# Move Printers directory to the top-level
+# Move Additional files
 import pathlib
 import shutil
 topLevelDir = pathlib.Path(DISTPATH) / specnm
 internalDir = topLevelDir / '_internal'
-if internalDir.exists():
-    shutil.move(internalDir / 'Printers', topLevelDir)
+shutil.copytree(pathlib.Path(SPECPATH) / 'Third Party', internalDir / 'Third Party')
+shutil.copytree(pathlib.Path(SPECPATH) / 'Printers', topLevelDir / 'Printers')
+shutil.copy(pathlib.Path(SPECPATH) / 'LICENSE', internalDir / 'LICENSE')

@@ -1,32 +1,33 @@
 # Building from source
 ## Windows (Git Bash)
-1) Install [Python]
-2) Install [Git for Windows]
-3) (Optional) Disable conflicting **app execution aliases** Windows features
+1) Install [Visual Studio] (with Visual C++)
+2) Install [Python]
+3) Install [Git for Windows]
+4) (Optional) Disable conflicting **app execution aliases** Windows features
     1) Navigate to **Start** -> **Settings** -> **Advanced app settings** -> **App execution aliases**
     2) Set **App Installer - python.exe** to **off**
     3) Set **App Installer - python3.exe** to **off**
-4) Clone the repository
+5) Clone the repository
    ```
    git clone https://github.com/sandmmakers/BedLeveler5000.git
    ```
-5) Enter the repository
+6) Enter the repository
    ```
    cd BedLeveler5000
    ```
-5) (Optional) Create a virtual environment
+7) (Optional) Create a virtual environment
    ```
    py -m venv venv
    ```
-6) Activate the virtual environment
+8) Activate the virtual environment
    ```
    source venv/Scripts/activate
    ```
-7) Install prerequisites
+9) Install prerequisites
    ```
    pip3 install -r requirements.txt
    ```
-8) Build the binary package
+10) Build the binary package
    ```
    ./build_all
    ```
@@ -35,7 +36,7 @@
 1) Perform the **Configure the system** steps listed in the installation directions
 2) Ensure system prerequisites are installed
    ```
-   sudo apt-get install binutils git libxcb-cursor0
+   sudo apt-get install build-essential binutils git libxcb-cursor0
    ```
 3) Install and configure Python
     - Systems with Python 3.12+
@@ -94,22 +95,11 @@
    ```
    cd BedLeveler5000
    ```
-6) (Optional) Create a virtual environment
-   ```
-   python3 -m venv venv
-   ```
-7) Activate the virtual environment
-   ```
-   source venv/bin/activate
-   ```
-8) Install prerequisites
-   ```
-   pip3 install -r requirements.txt
-   ```
-9) Build the binary package
+6) Build the binary package
    ```
    ./build_all
    ```
 
+   [Visual Studio] <https://visualstudio.microsoft.com>
    [Python]: <https://www.python.org>
    [Git for Windows]: <https://gitforwindows.org>
