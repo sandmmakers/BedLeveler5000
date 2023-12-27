@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from src.Common import Version
 from PyInstaller.utils.win32.versioninfo import FixedFileInfo
 from PyInstaller.utils.win32.versioninfo import StringFileInfo
 from PyInstaller.utils.win32.versioninfo import StringTable
@@ -14,7 +13,10 @@ import importlib.util
 import pathlib
 import sys
 
-def main(source, outputDir):
+sys.path.append(pathlib.Path(__file__).parent.as_posix())
+from Tag import Tag
+
+def main(source, outputDir, tag):
     sys.path.append(source.parent.as_posix())
     sourceSpec = importlib.util.spec_from_file_location('sourceName', source)
     sourceModule = importlib.util.module_from_spec(sourceSpec)
@@ -30,11 +32,11 @@ def main(source, outputDir):
         print('Output file already exists.', file=sys.stderr)
         sys.exit(1)
 
-    version = (Version.majorVersion(),
-               Version.minorVersion(),
-               Version.bugVersion(),
-               0)
-    versionString = Version.version(fourParts=True)
+    if tag is None:
+        version = (0, 0, 0, 0)
+    else:
+        version = Tag(tag).asTuple(4)
+    versionString = '.'.join(str(x) for x in version)
 
     currentYear = datetime.date.today().year
     copyRightRange = '2023'
@@ -56,7 +58,6 @@ def main(source, outputDir):
                                   kids=[StringFileInfo([stringTable]),
                                         VarFileInfo([VarStruct(u'Translation', [0x0409, 1200])])])
 
-
     with open(versonFile, 'wb') as file:
         file.write(str(vsVersionInfo).encode())
 
@@ -64,6 +65,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('CreateVersionFile')
     parser.add_argument('source', type=pathlib.Path, help='source file')
     parser.add_argument('output', type=pathlib.Path, help='output directory')
+    parser.add_argument('-t', '--tag', default=None, help='version tag')
 
     args = parser.parse_args()
-    main(args.source, args.output)
+    main(args.source, args.output, args.tag)

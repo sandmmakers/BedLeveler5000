@@ -1,10 +1,19 @@
+import pathlib
+
+topLevelDir = pathlib.Path(SPECPATH).parent
+srcDir = topLevelDir / 'src'
+resourcesDir = topLevelDir / 'Resources'
+buildDir = topLevelDir / 'Build'
+installDir = pathlib.Path(DISTPATH) / specnm
+internalDir = installDir / '_internal'
+
 block_cipher = None
 
 BedLeveler5000_a = Analysis(
-    ['src/BedLeveler5000.py'],
+    [srcDir / 'BedLeveler5000.py'],
     pathex=[],
     binaries=[],
-    datas=[('Resources', 'Resources')],
+    datas=[(resourcesDir, 'Resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -33,15 +42,15 @@ BedLeveler5000_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='Resources/Icon-128x128.png',
-    version='Build/BedLeveler5000_version.py',
+    icon=(resourcesDir / 'Icon-128x128.png').as_posix(),
+    version=(buildDir / 'BedLeveler5000_version.py').as_posix(),
 )
 
 PrinterInfoWizard_a = Analysis(
-    ['src/PrinterInfoWizard.py'],
+    [srcDir / 'PrinterInfoWizard.py'],
     pathex=[],
     binaries=[],
-    datas=[('Resources', 'Resources')],
+    datas=[(resourcesDir, 'Resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -70,15 +79,15 @@ PrinterInfoWizard_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='Resources/PrinterInfoWizard-128x128.png',
-    version='Build/PrinterInfoWizard_version.py',
+    icon=(resourcesDir / 'PrinterInfoWizard-128x128.png').as_posix(),
+    version=(buildDir / 'PrinterInfoWizard_version.py').as_posix(),
 )
 
 Inspector_G_code_a = Analysis(
-    ['src/InspectorG-code.py'],
+    [srcDir / 'InspectorG-code.py'],
     pathex=[],
     binaries=[],
-    datas=[('Resources', 'Resources')],
+    datas=[(resourcesDir, 'Resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -107,15 +116,15 @@ Inspector_G_code_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='Resources/InspectorG-code_Icon_128x128.png',
-    version='Build/InspectorG-Code_version.py',
+    icon=(resourcesDir / 'InspectorG-code_Icon_128x128.png').as_posix(),
+    version=(buildDir / 'InspectorG-Code_version.py').as_posix(),
 )
 
 PrinterTester_a = Analysis(
-    ['src/PrinterTester.py'],
+    [srcDir / 'PrinterTester.py'],
     pathex=[],
     binaries=[],
-    datas=[('Resources', 'Resources')],
+    datas=[(resourcesDir, 'Resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -144,8 +153,8 @@ PrinterTester_exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='Resources/PrinterTester-128x128.png',
-    version='Build/PrinterTester_version.py',
+    icon=(resourcesDir / 'PrinterTester-128x128.png').as_posix(),
+    version=(buildDir / 'PrinterTester_version.py').as_posix(),
 )
 
 coll = COLLECT(
@@ -172,10 +181,7 @@ coll = COLLECT(
 )
 
 # Move Additional files
-import pathlib
 import shutil
-topLevelDir = pathlib.Path(DISTPATH) / specnm
-internalDir = topLevelDir / '_internal'
-shutil.copytree(pathlib.Path(SPECPATH) / 'Third Party', internalDir / 'Third Party')
-shutil.copytree(pathlib.Path(SPECPATH) / 'Printers', topLevelDir / 'Printers')
-shutil.copy(pathlib.Path(SPECPATH) / 'LICENSE', internalDir / 'LICENSE')
+shutil.copytree(topLevelDir / 'Printers', installDir / 'Printers')
+shutil.copytree(topLevelDir / 'Third Party', internalDir / 'Third Party')
+shutil.copy(topLevelDir / 'LICENSE', internalDir / 'LICENSE')

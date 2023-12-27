@@ -1,0 +1,77 @@
+name: 'Build artifacts'
+run-name: 'Build artifacts ${{  github.sha }}'
+
+on:
+  push:
+    branches: master
+  workflow_call:
+    inputs:
+      TAG:
+        required: false
+        type: string
+
+env:
+  TAG: ${{inputs.TAG}}
+  PYTHON_VERSION: '3.12'
+  INSTALL_DIR: Install/BedLeveler5000
+
+jobs:
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build all
+        shell: bash
+        run: |
+          ./build_all ${TAG:+--tag "${TAG}"}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts-Windows
+          path: ${{ env.INSTALL_DIR }}
+          if-no-files-found: error
+
+  build-linux:
+    name: Linux
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build all
+        shell: bash
+        run: |
+          ./build_all ${TAG:+--tag "${TAG}"}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts-Linux
+          path: ${{ env.INSTALL_DIR }}
+          if-no-files-found: error
+
+  build-macos:
+    name: MacOS
+    runs-on: macos-11
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build all
+        shell: bash
+        run: |
+          ./build_all ${TAG:+--tag "${TAG}"}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts-MacOS
+          path: ${{ env.INSTALL_DIR }}
+          if-no-files-found: error

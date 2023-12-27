@@ -1,13 +1,27 @@
 #!/usr/bin/env bash
 set -x -o nounset -o pipefail -o errexit
 
+# Source directories
 TOP_LEVEL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-BUILD_DIR="${TOP_LEVEL_DIR}/Build"
-INSTALL_DIR="${TOP_LEVEL_DIR}/Install"
+BUILD_SYSTEM_DIR="${TOP_LEVEL_DIR}/Buildsystem"
+SRC_DIR="${TOP_LEVEL_DIR}/src"
 SUBMODULES_DIR="${TOP_LEVEL_DIR}/Submodules"
 PYINSTALLER_DIR="${SUBMODULES_DIR}/Pyinstaller"
+
+# Buildsystem files
+CREATE_VERSION_FILE="${BUILD_SYSTEM_DIR}/CreateVersionFile.py"
+CREATE_RELEASE_VERSION_FILE="${BUILD_SYSTEM_DIR}/CreateReleaseVersionFile.py"
+REQUIREMENTS_TXT="${BUILD_SYSTEM_DIR}/requirements.txt"
+SPEC_FILE="${BUILD_SYSTEM_DIR}/BedLeveler5000.spec"
+
+# Generated directories
+BUILD_DIR="${TOP_LEVEL_DIR}/Build"
+INSTALL_DIR="${TOP_LEVEL_DIR}/Install"
+INTERNAL_DIR="${INSTALL_DIR}/BedLeveler5000/_internal"
 BUILD_VENV="${BUILD_DIR}/build_venv"
-REQUIREMENTS_TXT="${TOP_LEVEL_DIR}/requirements.txt"
+
+# Setup PYTHONPATH
+export PYTHONPATH="${SRC_DIR}":"${SUBMODULES_DIR}"
 
 KERNEL_NAME="$(uname -s)"
 case "${KERNEL_NAME}" in
@@ -19,6 +33,35 @@ case "${KERNEL_NAME}" in
         ACTIVATE_PATH="${BUILD_VENV}/bin/activate"
         WINDOWS_SPECIFIC=false
 esac
+
+usage() {
+    printf "$0 [options]...\n\n"
+    printf "Build the Bed Leveler 5000 software suite\n\n"
+    printf "options:\n"
+    printf " -h, --help             show this message and exit\n"
+    printf " -t [TAG], --tag [TAG]  use tag\n"
+    exit 0
+}
+
+TAG=""
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      usage
+      ;;
+    -t|--tag)
+      TAG="$2"
+      shift
+      shift
+      ;;
+    -*|--*)
+      error "Unknown option ($1)"
+      ;;
+    *)
+      error "Unexpected argument ($1)"
+      ;;
+  esac
+done
 
 rm -rf "${BUILD_DIR}"
 rm -rf "${INSTALL_DIR}"
@@ -38,7 +81,12 @@ pylint --rcfile .pylintrc --errors-only src
 pip cache purge
 
 # Build and install Pyinstaller
-cp -r "${PYINSTALLER_DIR}" "${BUILD_DIR}"
+mkdir -p "${BUILD_DIR}/Pyinstaller"
+cp "${PYINSTALLER_DIR}/setup.cfg" "${BUILD_DIR}/Pyinstaller"
+cp "${PYINSTALLER_DIR}/setup.py" "${BUILD_DIR}/Pyinstaller"
+cp -r "${PYINSTALLER_DIR}/bootloader" "${BUILD_DIR}/Pyinstaller"
+cp -r "${PYINSTALLER_DIR}/PyInstaller" "${BUILD_DIR}/Pyinstaller"
+cp -r "${PYINSTALLER_DIR}/scripts" "${BUILD_DIR}/Pyinstaller"
 (
     cd "${BUILD_DIR}/Pyinstaller/bootloader"
     ${PYTHON_EXE} ./waf distclean all
@@ -48,10 +96,18 @@ cp -r "${PYINSTALLER_DIR}" "${BUILD_DIR}"
 
 if [ ${WINDOWS_SPECIFIC} = true ]; then
     # Create version files
-    ./CreateVersionFile.py src/BedLeveler5000.py "${BUILD_DIR}"
-    ./CreateVersionFile.py src/PrinterInfoWizard.py "${BUILD_DIR}"
-    ./CreateVersionFile.py src/InspectorG-Code.py "${BUILD_DIR}"
-    ./CreateVersionFile.py src/PrinterTester.py "${BUILD_DIR}"
+    for FILE in "BedLeveler5000.py" \
+                "PrinterInfoWizard.py" \
+                "InspectorG-Code.py" \
+                "PrinterTester.py"
+    do
+        "${PYTHON_EXE}" "${CREATE_VERSION_FILE}" "${SRC_DIR}/${FILE}" "${BUILD_DIR}" ${TAG:+--tag "${TAG}"}
+    done
 fi
 
-pyinstaller BedLeveler5000.spec --workpath="${BUILD_DIR}" --distpath="${INSTALL_DIR}"
+pyinstaller "${SPEC_FILE}" --workpath="${BUILD_DIR}" --distpath="${INSTALL_DIR}"
+
+# Create RELEASE_VERSION file if a tag was specified
+if [ ! -z "${TAG}" ]; then
+    ${PYTHON_EXE} "${CREATE_RELEASE_VERSION_FILE}" "${TAG}" "${INTERNAL_DIR}"
+fi

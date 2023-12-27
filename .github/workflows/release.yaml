@@ -1,0 +1,74 @@
+name: 'Create release'
+run-name: 'Create release ${{  github.ref_name }}'
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  Build:
+    name: Build
+    uses: ./.github/workflows/build.yaml
+    with:
+      TAG: ${{  github.ref_name }}
+  Release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: Build
+    environment: Deployment
+    env:
+      TAG: ${{ github.ref_name }}
+      WINDOWS_STEM: BedLeveler5000-${{ github.ref_name }}-windows-x86_64
+      LINUX_STEM: BedLeveler5000-${{ github.ref_name }}-linux-x86_64
+      MACOS_STEM: BedLeveler5000-${{ github.ref_name }}-macos-x86_64
+      HASHES_FILE: BedLeveler5000-${{ github.ref_name }}-SHA-256.txt
+      ASC_FILE: BedLeveler5000-${{ github.ref_name }}-SHA-256.txt.asc
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Create assets
+        run: |
+          mv Artifacts-Windows ${WINDOWS_STEM}
+          7z a ${WINDOWS_STEM}.7z ${WINDOWS_STEM}
+          mv Artifacts-Linux ${LINUX_STEM}
+          tar zcvf ${LINUX_STEM}.tgz ${LINUX_STEM}
+          mv Artifacts-MacOS ${MACOS_STEM}
+          tar zcvf ${MACOS_STEM}.tgz ${MACOS_STEM}
+      - name: Create hashes file
+        run: |
+          sha256sum --binary \
+              ${WINDOWS_STEM}.7z \
+              ${LINUX_STEM}.tgz \
+              ${MACOS_STEM}.tgz \
+              > ${HASHES_FILE}
+          cat ${HASHES_FILE}
+      - name: Sign hashes file
+        env:
+          GNUPGHOME: ~/.gnupg
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_SIGNING_KEY_PASSWORD: ${{ secrets.GPG_SIGNING_KEY_PASSWORD }}
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          printf '%s' "$GPG_SIGNING_KEY" > ~/.gnupg/private.key
+          chmod 400 ~/.gnupg/private.key
+          printf '%s' $GPG_SIGNING_KEY_PASSWORD | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --import ~/.gnupg/private.key
+          printf '%s' $GPG_SIGNING_KEY_PASSWORD | gpg --batch --pinentry-mode loopback --passphrase-fd 0 --armor --output ${ASC_FILE} --detach-sig ${HASHES_FILE}
+          rm -rf ~/.gnupg
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$TAG" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${TAG}" \
+              --prerelease \
+              --verify-tag \
+              --generate-notes \
+              ${WINDOWS_STEM}.7z \
+              ${LINUX_STEM}.tgz \
+              ${MACOS_STEM}.tgz \
+              ${HASHES_FILE} \
+              ${ASC_FILE}

@@ -203,7 +203,7 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'InspectorG-code_Icon_128x128.png').as_posix()))
     app.setApplicationName('Inspector G-code')
-    app.setApplicationVersion(Version.version())
+    app.setApplicationVersion(Version.displayVersion())
 
     # Windows only, configure icon settings
     try:

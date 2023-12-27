@@ -319,7 +319,7 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'PrinterInfoWizard-128x128.png').as_posix()))
     QtCore.QCoreApplication.setApplicationName('Printer Info Wizard')
-    QtCore.QCoreApplication.setApplicationVersion(Version.version())
+    QtCore.QCoreApplication.setApplicationVersion(Version.displayVersion())
 
     # Windows only, configure icon settings
     try:
