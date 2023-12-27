@@ -71,7 +71,7 @@ if __name__ == '__main__':
     QtCore.QCoreApplication.setApplicationVersion('1.0')
 
     def test():
-        dialog = AboutDialog()
+        dialog = AboutDialog('Description')
         dialog.exec()
 
     testButton = QtWidgets.QPushButton('Test')
