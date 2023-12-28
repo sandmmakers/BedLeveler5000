@@ -30,6 +30,7 @@ to use **Bed Leveler 5000**.
 - [Python] - The Python programming language (3.12+)
 - [pylint] - A static code analyser for Python 2 and 3
 - [Pillow] - The friendly PIL fork
+- [GnuPG] - A free implementation of the OpenPGP standard
 
 [Bed Leveler 5000][BedLeveler5000], [Printer Info Wizard][BedLeveler5000], and [Inspector G-code][InspectorG-code] themselves are open source with a [public repository][bedleveler5000] on GitHub.
 
@@ -57,6 +58,9 @@ to use **Bed Leveler 5000**.
 3) Extract the downloaded archive
 4) Launch **BedLeveler5000**, **PrinterInfoWizard**, or **InspectorG-code**
 
+## Release integrity
+Starting with version **v0.4.0**, releases are cryptographically signed with the GPG key [03E565C3F0C71CB2] and are fully automated.
+
 ## Filing a bug report
 See [Filing a bug report](Docs/FilingABugReport.md)
 
@@ -78,3 +82,5 @@ GPLv3
    [Python]: <https://www.python.org>
    [pylint]: <https://github.com/pylint-dev/pylint>
    [Pillow]: <https://github.com/python-pillow/Pillow>
+   [GnuPG]: <https://www.gnupg.org>
+   [03E565C3F0C71CB2]: <https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x0A55C210C62C5A0AE461C36503E565C3F0C71CB2>
