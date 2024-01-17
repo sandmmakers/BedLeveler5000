@@ -4,6 +4,7 @@ from PySide6 import QtSerialPort
 from collections import OrderedDict
 import dataclasses
 from enum import StrEnum
+import enum
 import json
 
 CURRENT_PRINTER_INFO_VERSION = 2
@@ -13,17 +14,30 @@ class ConnectionMode(StrEnum):
     MARLIN_2 = 'Marlin2'
     MOONRAKER = 'Moonraker'
 
+@enum.verify(enum.UNIQUE)
+class BaudRate(enum.IntEnum):
+    BAUD_1200 = 1_200
+    BAUD_2400 = 2_400
+    BAUD_4800 = 4_800
+    BAUD_9600 = 9_600
+    BAUD_19200 = 19_200
+    BAUD_38400 = 38_400
+    BAUD_57600 = 57_600
+    BAUD_115200 = 115_200
+    BAUD_250000 = 250_000
+
 CONNECTION_MODE_MAP = OrderedDict([(str(ConnectionMode.MARLIN_2), ConnectionMode.MARLIN_2),
                                    (str(ConnectionMode.MOONRAKER), ConnectionMode.MOONRAKER)])
 
-BAUD_RATE_MAP = OrderedDict([('1200', QtSerialPort.QSerialPort.Baud1200),
-                             ('2400', QtSerialPort.QSerialPort.Baud2400),
-                             ('4800', QtSerialPort.QSerialPort.Baud4800),
-                             ('9600', QtSerialPort.QSerialPort.Baud9600),
-                             ('19200', QtSerialPort.QSerialPort.Baud19200),
-                             ('38400', QtSerialPort.QSerialPort.Baud38400),
-                             ('57600', QtSerialPort.QSerialPort.Baud57600),
-                             ('115200', QtSerialPort.QSerialPort.Baud115200)])
+BAUD_RATE_MAP = OrderedDict([('1200', BaudRate.BAUD_1200),
+                             ('2400', BaudRate.BAUD_2400),
+                             ('4800', BaudRate.BAUD_4800),
+                             ('9600', BaudRate.BAUD_9600),
+                             ('19200', BaudRate.BAUD_19200),
+                             ('38400', BaudRate.BAUD_38400),
+                             ('57600', BaudRate.BAUD_57600),
+                             ('115200', BaudRate.BAUD_115200),
+                             ('250000', BaudRate.BAUD_250000)])
 
 DATA_BITS_MAP = OrderedDict([('5', QtSerialPort.QSerialPort.Data5),
                              ('6', QtSerialPort.QSerialPort.Data6),
@@ -46,7 +60,7 @@ FLOW_CONTROL_MAP = OrderedDict([('No', QtSerialPort.QSerialPort.NoFlowControl),
 
 @dataclasses.dataclass
 class Marlin2Connection:
-    baudRate: QtSerialPort.QSerialPort.BaudRate = QtSerialPort.QSerialPort.Baud115200
+    baudRate: BaudRate = BaudRate.BAUD_115200
     dataBits: QtSerialPort.QSerialPort.DataBits = QtSerialPort.QSerialPort.Data8
     parity: QtSerialPort.QSerialPort.Parity = QtSerialPort.QSerialPort.NoParity
     stopBits: QtSerialPort.QSerialPort.StopBits = QtSerialPort.QSerialPort.OneStop
