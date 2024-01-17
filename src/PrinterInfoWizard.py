@@ -9,6 +9,7 @@ from Dialogs.PrinterInfoWizard.PerformHomingDialog import PerformHomingDialog
 from Dialogs.ErrorDialog import ErrorDialog
 from Dialogs.FatalErrorDialog import FatalErrorDialog
 from Common import PrinterInfo
+from Common.PrinterInfo import ScrewType
 from Common.PrinterInfo import ConnectionMode
 from Common.PrinterInfo import CONNECTION_MODE_MAP
 from Common.PrinterInfo import BAUD_RATE_MAP
@@ -68,6 +69,10 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
         self.hostLineEdit = QtWidgets.QLineEdit()
 
         self.displayNameLineEdit = QtWidgets.QLineEdit()
+
+        self.screwTypeComboBox = QtWidgets.QComboBox()
+        for screwType in ScrewType:
+            self.screwTypeComboBox.addItem(screwType.value, screwType)
 
         self.marlin2ConnectionWidget = SerialWidget()
         self.moonrakerConnectionWidget = QtWidgets.QWidget()
@@ -134,8 +139,16 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
         connectionGroupBox = QtWidgets.QGroupBox('Connection')
         connectionGroupBox.setLayout(connectionLayout)
 
+        screwTypeLayout = QtWidgets.QHBoxLayout()
+        screwTypeLayout.addWidget(QtWidgets.QLabel('Screw Type:'))
+        screwTypeLayout.addWidget(self.screwTypeComboBox)
+
+        leftLayout = QtWidgets.QVBoxLayout()
+        leftLayout.addWidget(connectionGroupBox)
+        leftLayout.addLayout(screwTypeLayout)
+
         connectionGridLayout = QtWidgets.QHBoxLayout()
-        connectionGridLayout.addWidget(connectionGroupBox)
+        connectionGridLayout.addLayout(leftLayout)
         connectionGridLayout.addWidget(self.grid)
 
         printerInfoLayout = QtWidgets.QVBoxLayout()
@@ -227,7 +240,9 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
     def loadDefaults(self):
         self.displayNameLineEdit.clear()
 
-        defaultMarlin2Connection = PrinterInfo.default(ConnectionMode.MARLIN_2).connection
+        defaultPrinterInfo = PrinterInfo.default(ConnectionMode.MARLIN_2)
+        self.screwTypeComboBox.setCurrentText(defaultPrinterInfo.screwType.value)
+        defaultMarlin2Connection = defaultPrinterInfo.connection
         self.marlin2ConnectionWidget.setBaudRate(defaultMarlin2Connection.baudRate)
         self.marlin2ConnectionWidget.setDataBits(defaultMarlin2Connection.dataBits)
         self.marlin2ConnectionWidget.setParity(defaultMarlin2Connection.parity)
@@ -259,6 +274,7 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
             comboBox.setCurrentIndex(index)
 
         self.displayNameLineEdit.setText(printerInfo.displayName)
+        self.screwTypeComboBox.setCurrentText(printerInfo.screwType.value)
 
         connectionModeIndex = self.connectionModeComboBox.findData(printerInfo.connectionMode)
         if connectionModeIndex == -1:
@@ -308,6 +324,7 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
             connection = MoonrakerConnection()
 
         return PrinterInfo._PrinterInfo(displayName = self.displayNameLineEdit.text(),
+                                        screwType = self.screwTypeComboBox.currentData(),
                                         connectionMode = self.connectionModeComboBox.currentData(),
                                         connection = connection,
                                         manualProbePoints = self.grid.getPoints())

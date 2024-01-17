@@ -70,6 +70,10 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
         self.ySpinBox.setDecimals(self.DECIMALS)
         if point.y is not None:
             self.ySpinBox.setValue(point.y)
+        self.fixedComboBox = QtWidgets.QComboBox()
+        self.fixedComboBox.addItem('Yes', True)
+        self.fixedComboBox.addItem('No', False)
+        self.fixedComboBox.setCurrentText('Yes' if point.fixed else 'No')
 
         self.okButton = QtWidgets.QPushButton('Ok')
         self.okButton.clicked.connect(self.accept)
@@ -93,7 +97,9 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QGridLayout()
         layout.addWidget(QtWidgets.QLabel('Name:'), 0, 0)
-        layout.addWidget(self.nameLineEdit, 0, 1, 1, 3)
+        layout.addWidget(self.nameLineEdit, 0, 1)
+        layout.addWidget(QtWidgets.QLabel('Fixed:'), 0, 2)
+        layout.addWidget(self.fixedComboBox, 0, 3)
         layout.addWidget(QtWidgets.QLabel('Row:'), 1, 0)
         layout.addWidget(self.rowLineEdit, 1, 1)
         layout.addWidget(QtWidgets.QLabel('Col:'), 1, 2)
@@ -162,6 +168,7 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
 
     def point(self):
         return GridProbePoint(name = self.nameLineEdit.text(),
+                              fixed = self.fixedComboBox.currentData(),
                               row = int(self.rowLineEdit.text()),
                               column = int(self.columnLineEdit.text()),
                               x = self.xSpinBox.value(),
@@ -196,6 +203,14 @@ if __name__ == '__main__':
     printerSpecificGroup = parser.add_mutually_exclusive_group(required=True)
     printerSpecificGroup.add_argument('--port', default=None, help='port to use for Marlin2 connection')
     printerSpecificGroup.add_argument('--host', default=None, help='host to use for Moonraker connection')
+
+
+    parser.add_argument('-n', '--name', default='Test', help='name of point')
+    parser.add_argument('-f', '--fixed', action='store_true', help='is point fixed')
+    parser.add_argument('-r', '--row', default=2, type=int, help='row value')
+    parser.add_argument('-c', '--column', default=0, type=int, help='column value')
+    parser.add_argument('-x', default=0.0, type=float, help='x coordinate')
+    parser.add_argument('-y', default=0.0, type=float, help='y coordinate')
     parser.add_argument('--log-level', choices=['all', 'debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
     parser.add_argument('--log-console', action='store_true', help='log to the console')
     parser.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
@@ -209,11 +224,18 @@ if __name__ == '__main__':
     printerInfo = PrinterInfo.default(ConnectionMode.MOONRAKER if args.port is None else ConnectionMode.MARLIN_2)
 
     # Create the dialog
-    gridPoint = GridProbePoint(row=2, column=0)
+    gridPoint = GridProbePoint(name = args.name,
+                               fixed = args.fixed,
+                               row = args.row,
+                               column = args.column,
+                               x = args.x,
+                               y = args.y)
     configureGridPointDialog = ConfigureGridPointDialog(printerInfo=printerInfo, port=args.port, host=args.host, gridPoint=gridPoint)
-    configureGridPointDialog.show()
 
     try:
-       sys.exit(app.exec())
+        if configureGridPointDialog.exec() == QtWidgets.QDialog.Accepted:
+            print(str(configureGridPointDialog.point()))
+        else:
+            print('Canceled')
     except KeyboardInterrupt:
         sys.exit(1)

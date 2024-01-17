@@ -1,11 +1,13 @@
 {
-    "version": 2,
+    "version": 3,
     "displayName": "Neptune 4",
     "connectionMode": "Moonraker",
     "connection": {},
+    "screwType": "CW-M4",
     "manualProbePoints": [
         {
             "name": "2",
+            "fixed": false,
             "row": 0,
             "column": 0,
             "x": 31.5,
@@ -13,6 +15,7 @@
         },
         {
             "name": "3",
+            "fixed": false,
             "row": 0,
             "column": 2,
             "x": 201.5,
@@ -20,6 +23,7 @@
         },
         {
             "name": "H",
+            "fixed": true,
             "row": 1,
             "column": 1,
             "x": 115.75,
@@ -27,6 +31,7 @@
         },
         {
             "name": "1",
+            "fixed": false,
             "row": 2,
             "column": 0,
             "x": 31.5,
@@ -34,6 +39,7 @@
         },
         {
             "name": "4",
+            "fixed": false,
             "row": 2,
             "column": 2,
             "x": 201.5,

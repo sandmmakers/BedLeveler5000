@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
+from Common.Points import NamedPoint2F
 from PySide6 import QtCore
 from PySide6 import QtGui
 from PySide6 import QtWidgets
 
 class ManualProbeButtonArea(QtWidgets.QMainWindow):
-    probe = QtCore.Signal(str, float, float)
+    probe = QtCore.Signal(NamedPoint2F)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,7 +29,7 @@ class ManualProbeButtonArea(QtWidgets.QMainWindow):
         for details in printerInfo.manualProbePoints:
             button = QtWidgets.QPushButton(details.name)
             point = QtCore.QPointF(details.x, details.y)
-            self.connections.append(button.clicked.connect(lambda name=details.name, x=point.x(), y=point.y(): self.probe.emit(name, x, y)))
+            self.connections.append(button.clicked.connect(lambda name=details.name, x=point.x(), y=point.y(): self.probe.emit(NamedPoint2F(name, x, y))))
             layout.addWidget(button, details.row, details.column)
 
         widget = QtWidgets.QWidget()

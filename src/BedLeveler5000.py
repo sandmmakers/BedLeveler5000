@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from Common import Common
+from Common.Points import NamedPoint3F
 from Common.CommonArgumentParser import CommonArgumentParser
 from Widgets.BedLeveler5000.ManualWidget import ManualWidget
 from Widgets.BedLeveler5000.MeshWidget import MeshWidget
@@ -297,12 +298,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self.updateState(self.State.CONNECTED)
             self.dialogs[self.Dialog.HOMING].accept()
 
-    def manualProbe(self, name, x, y):
+    def manualProbe(self, command, pointList):
+        assert(len(pointList) > 0)
         context={'type': self.State.MANUAL_PROBE,
-                 'name': name}
+                 'command': command,
+                 'pointList': pointList,
+                 'resultList': []}
 
-        self.printer.probe(self._createId('probe'), context=context, x=x, y=y)
-        self.dialogs[self.Dialog.PROBE].setText(f'Manually probing at ({x}, {y})')
+        point = pointList[0]
+        self.printer.probe(self._createId(f'probe_{point.x}_{point.y}'), context=context, x=point.x, y=point.y)
+        self.dialogs[self.Dialog.PROBE].setText(f'Manually probing at ({point.x}, {point.y})')
         self.updateState(self.State.MANUAL_PROBE)
         self.dialogs[self.Dialog.PROBE].show()
 
@@ -327,9 +332,19 @@ class MainWindow(QtWidgets.QMainWindow):
             self._error('Detected a printer response mismatch.')
         elif context['type'] == self.State.MANUAL_PROBE:
             assert(self.state == self.State.MANUAL_PROBE)
-            self.manualWidget.reportProbe(context['name'], response)
-            self.dialogs[self.Dialog.PROBE].accept()
-            self.updateState(self.State.CONNECTED)
+
+            # Move the current point from the point list to the result list
+            point = context['pointList'].pop(0)
+            context['resultList'].append(NamedPoint3F(point.name, response.x, response.y, response.z))
+
+            if len(context['pointList']) > 0:
+                point = context['pointList'][0]
+                self.printer.probe(self._createId(f'probe_{point.x}_{point.y}'), context=context, x=point.x, y=point.y)
+                self.dialogs[self.Dialog.PROBE].setText(f'Manually probing at ({point.x}, {point.y})')
+            else:
+                self.manualWidget.reportProbe(context['command'], context['resultList'])
+                self.dialogs[self.Dialog.PROBE].accept()
+                self.updateState(self.State.CONNECTED)
         else:
             assert(context['type'] == self.State.UPDATING_MESH and self.state == self.State.UPDATING_MESH)
             row = context['row']

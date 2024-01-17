@@ -29,8 +29,8 @@ class Cell(QtWidgets.QWidget):
         font = self.button.font()
         fontMetrics = QtGui.QFontMetrics(font)
         self.lineHeight = fontMetrics.lineSpacing()
-        self.textSize = QtCore.QSize(fontMetrics.horizontalAdvance(self.valueString('X', 123.12)),
-                                     3*fontMetrics.lineSpacing())
+        self.textSize = QtCore.QSize(fontMetrics.horizontalAdvance(self.fixedString(True)),
+                                     4*fontMetrics.lineSpacing())
 
         self.button.setIconSize(self.textSize)
         self.button.setFixedSize(self.button.style().sizeFromContents(QtWidgets.QStyle.ContentsType.CT_PushButton,
@@ -43,8 +43,13 @@ class Cell(QtWidgets.QWidget):
         assert(isinstance(self.point.row, int) and isinstance(self.point.column, int))
 
         return self.point.name is not None and \
+               self.point.fixed is not None and \
                self.point.x is not None and    \
                self.point.y is not None
+
+    @staticmethod
+    def fixedString(value):
+        return 'Fixed: ' + 'Yes' if value else 'No'
 
     @staticmethod
     def valueString(name, value):
@@ -54,8 +59,9 @@ class Cell(QtWidgets.QWidget):
         else:
             return f'{prefix} {value:.2f}'.rstrip('0').rstrip('.')
 
-    def setValues(self, name, x, y):
+    def setValues(self, name, fixed, x, y):
         self.point.name = name
+        self.point.fixed = fixed
         self.point.x = x
         self.point.y = y
 
@@ -69,10 +75,11 @@ class Cell(QtWidgets.QWidget):
         painter.setFont(self.button.font())
 
         # Only render text is at least one field is non-None
-        if self.point.name is not None or self.point.x is not None or self.point.y is not None:
+        if self.point.name is not None or self.point.fixed is not None or self.point.x is not None or self.point.y is not None:
             painter.drawText(0, 0, self.textSize.width(), self.textSize.height(), QtCore.Qt.AlignHCenter, '' if self.point.name is None else self.point.name)
-            painter.drawText(0, self.lineHeight, self.textSize.width(), self.textSize.height(), QtCore.Qt.AlignLeft, self.valueString('X', self.point.x))
-            painter.drawText(0, 2 * self.lineHeight, self.textSize.width(), self.textSize.height(), QtCore.Qt.AlignLeft, self.valueString('Y', self.point.y))
+            painter.drawText(0, self.lineHeight, self.textSize.width(), self.textSize.height(), QtCore.Qt.AlignLeft, self.fixedString(self.point.fixed))
+            painter.drawText(0, 2 * self.lineHeight, self.textSize.width(), self.textSize.height(), QtCore.Qt.AlignLeft, self.valueString('X', self.point.x))
+            painter.drawText(0, 3 * self.lineHeight, self.textSize.width(), self.textSize.height(), QtCore.Qt.AlignLeft, self.valueString('Y', self.point.y))
 
         # Stop painting
         painter.end()
@@ -113,12 +120,12 @@ class Grid(QtWidgets.QGroupBox):
 
     def setPoint(self, point):
         cell = self.gridLayout.itemAtPosition(point.row, point.column).widget()
-        cell.setValues(point.name, point.x, point.y)
+        cell.setValues(point.name, point.fixed, point.x, point.y)
 
     def clear(self):
         for row in range(self.gridLayout.rowCount()):
             for column in range(self.gridLayout.columnCount()):
-                self.gridLayout.itemAtPosition(row, column).widget().setValues(None, None, None)
+                self.gridLayout.itemAtPosition(row, column).widget().setValues(None, None, None, None)
 
         self.cleared.emit()
 
@@ -142,9 +149,10 @@ if __name__ == '__main__':
     grid = Grid('Test Grid')
     grid.cellClicked.connect(lambda point: print(f'Clicked:\n' \
                                                  f'Row: {point.row}, Column: {point.column}\n' \
-                                                 f'Name: {point.name}, X: {point.x}, Y: {point.y}'))
+                                                 f'Name: {point.name}, Fixed: {point.fixed}, X: {point.x}, Y: {point.y}'))
 
     grid.setPoint(GridProbePoint(name = '1',
+                                 fixed = True,
                                  row = 2,
                                  column = 0,
                                  x = 3,
