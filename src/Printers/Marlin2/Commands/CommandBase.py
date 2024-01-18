@@ -30,8 +30,12 @@ class CommandBase(QtCore.QObject):
 
     @staticmethod
     def verifyOkResponseLine(line):
-        if line != 'ok':
-            raise GCodeError(f'Expected \'ok\' but detected \'{line}\'.')
+        tokens = line.split()
+
+        if len(tokens) not in [1, 3] or \
+           tokens[0] != 'ok' or \
+           (len(tokens) == 3 and (not tokens[1].startswith('P') or not tokens[2].startswith('B'))):
+            raise GCodeError(f'Expected \'ok [PXX] [BXX]\' but detected \'{line}\'.')
 
     @staticmethod
     def tokenize(line, count, *, replace=' '):
