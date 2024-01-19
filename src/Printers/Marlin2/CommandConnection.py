@@ -53,13 +53,14 @@ class CommandConnection(SerialConnection):
     def _processLine(self, line):
         """ Improve error handling here """
 
-        # Skip echo lines
-        if line.startswith('echo:'):
-            return
-
-        # Verify there is a current command
+        # Skip auto reported messages when there are no commands
         if self.currentCommand is None:
-            raise IOError('Received a line without a command ({line}).')
+            if line.startswith('echo:') or \
+               line.startswith('//') or \
+               line.startswith(' T') or \
+               line.startswith('X:'):
+                return
+            raise IOError(f'Received a line without a command ({line}).')
 
         # Send the line to the current command
         self.currentCommand.processLine(line)

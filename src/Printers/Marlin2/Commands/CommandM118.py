@@ -13,6 +13,8 @@ class CommandM118(CommandBase):
         a1Part = ' A1' if a1 else ''
         e1Part = ' E1' if e1 else ''
 
+        # TODO: This command is not correct
+
         if pn is None:
             pnPart = ''
         else:
@@ -23,7 +25,6 @@ class CommandM118(CommandBase):
         stringPart = '' if string is None else ' ' + string
 
         super().__init__(self.NAME + a1Part + e1Part + pnPart + stringPart)
-
 
     def _processLine(self, line):
         # Line 0: string

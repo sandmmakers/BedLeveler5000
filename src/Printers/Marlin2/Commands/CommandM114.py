@@ -1,7 +1,6 @@
-from .GCodeError import GCodeError
-from .CommandBase import CommandBase
+from .PositionOkCommand import PositionOkCommand
 
-class CommandM114(CommandBase):
+class CommandM114(PositionOkCommand):
     NAME = 'M114'
 
     def __init__(self, *, d=None, e=None, r=None):
@@ -14,15 +13,3 @@ class CommandM114(CommandBase):
         rPart = ' R' if self.r else ''
 
         super().__init__(self.NAME + dPart + ePart + rPart)
-
-    def _processLine(self, line):
-        # Line 0: position
-        # Line 1: ok
-
-        if self.result is None:
-            self.result = self.parsePositionResponseLine(line)
-        else:
-            self.verifyOkResponseLine(line)
-            return True
-
-        return False

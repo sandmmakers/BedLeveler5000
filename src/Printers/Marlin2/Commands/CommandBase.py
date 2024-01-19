@@ -29,6 +29,30 @@ class CommandBase(QtCore.QObject):
             self.finished.emit(self)
 
     @staticmethod
+    def isEcho(line):
+        return line.startswith('echo:')
+
+    @staticmethod
+    def isComment(line):
+        return line.startswith('//')
+
+    @classmethod
+    def isMetadata(cls, line):
+        return cls.isEcho(line) or cls.isComment(line)
+
+    @staticmethod
+    def isPositionAutoReport(line):
+        return line.startswith('X:')
+
+    @staticmethod
+    def isTemperatureAutoReport(line):
+        return line.startswith(' T')
+
+    @classmethod
+    def isAutoReport(cls, line):
+        return cls.isPositionAutoReport(line) or cls.isTemperatureAutoReport(line)
+
+    @staticmethod
     def verifyOkResponseLine(line):
         tokens = line.split()
 

@@ -1,8 +1,7 @@
-from .GCodeError import GCodeError
-from .CommandBase import CommandBase
+from .OkCommand import OkCommand
 from . import Converter
 
-class CommandG0(CommandBase):
+class CommandG0(OkCommand):
     NAME = 'G0'
 
     def __init__(self, *, e=None, f=None, s=None, x=None, y=None, z=None):
@@ -22,9 +21,3 @@ class CommandG0(CommandBase):
         zPart = '' if self.z is None else Converter.floatToStr(self.z, prefix=' Z')
 
         super().__init__(self.NAME + ePart + fPart + sPart + xPart + yPart + zPart)
-
-    def _processLine(self, line):
-        # Line 0: ok
-
-        self.verifyOkResponseLine(line)
-        return True

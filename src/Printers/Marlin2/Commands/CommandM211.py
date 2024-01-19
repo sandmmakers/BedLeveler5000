@@ -21,6 +21,10 @@ class CommandM211(CommandBase):
         # Line 1: '  Min:  X0.00 Y-6.00 Z0.00   Max:  X430.00 Y430.00 Z500.00'
         # Line 2: 'ok'
 
+        if self.isMetadata(line) or \
+           (self.isAutoReport(line) and self.result is None):
+            return False
+
         if self.s is None:
             tokens = line.strip().split()
 

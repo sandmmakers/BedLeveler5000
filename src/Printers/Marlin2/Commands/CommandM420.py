@@ -1,4 +1,3 @@
-from .GCodeError import GCodeError
 from .CommandBase import CommandBase
 from . import Converter
 
@@ -32,10 +31,15 @@ class CommandM420(CommandBase):
         # ...
         # Line ?: ok
 
+        if self.isMetadata(line) or \
+           (self.isAutoReport(line) and self.result is None):
+            return False
+
         if self.result is None:
             self.result = {'response': []}
 
-        if line == 'ok':
+        if line.startswith('ok'):
+            self.verifyOkResponseLine(line)
             return True
         else:
             self.result['response'].append(line)

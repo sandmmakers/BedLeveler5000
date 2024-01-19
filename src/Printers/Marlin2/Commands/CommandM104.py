@@ -1,8 +1,7 @@
-from .GCodeError import GCodeError
-from .CommandBase import CommandBase
+from .OkCommand import OkCommand
 from . import Converter
 
-class CommandM104(CommandBase):
+class CommandM104(OkCommand):
     NAME = 'M104'
 
     def __init__(self, *, b=None, f=None, i=None, s=None, t=None):
@@ -19,9 +18,3 @@ class CommandM104(CommandBase):
         tPart = '' if self.t is None else f' T{self.t}'
 
         super().__init__(self.NAME + bPart + fPart + iPart + sPart + tPart)
-
-    def _processLine(self, line):
-        # Line 0: ok
-
-        self.verifyOkResponseLine(line)
-        return True

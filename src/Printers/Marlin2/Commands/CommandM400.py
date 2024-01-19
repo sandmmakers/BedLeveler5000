@@ -1,15 +1,8 @@
-from .GCodeError import GCodeError
-from .CommandBase import CommandBase
+from .OkCommand import OkCommand
 
-class CommandM400(CommandBase):
+class CommandM400(OkCommand):
     NAME = 'M400'
 
     def __init__(self):
         # Build request
         super().__init__(self.NAME)
-
-    def _processLine(self, line):
-        # Line 0: ok
-
-        self.verifyOkResponseLine(line)
-        return True

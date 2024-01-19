@@ -26,6 +26,10 @@ class CommandM851(CommandBase):
         #            +------------------------------------------- G-code command name
         # Line 1: ok
 
+        if self.isMetadata(line) or \
+           (self.isAutoReport(line) and self.result is None):
+            return False
+
         if self.result is None:
             tokens = CommandBase.tokenize(line, 6)
 

@@ -1,8 +1,7 @@
-from .GCodeError import GCodeError
-from .CommandBase import CommandBase
+from .OkCommand import OkCommand
 from . import Converter
 
-class CommandM140(CommandBase):
+class CommandM140(OkCommand):
     NAME = 'M140'
 
     def __init__(self, *, i=None, s=None):
@@ -13,9 +12,3 @@ class CommandM140(CommandBase):
         sPart = '' if self.s is None else Converter.floatToStr(self.s, prefix=' S')
 
         super().__init__(self.NAME + iPart + sPart)
-
-    def _processLine(self, line):
-        # Line 0: ok
-
-        self.verifyOkResponseLine(line)
-        return True

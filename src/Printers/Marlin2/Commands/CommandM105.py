@@ -23,6 +23,9 @@ class CommandM105(CommandBase):
         #          |  +----------------------------------------------------------- Tool temp (actual)
         #          +-------------------------------------------------------------- ok
 
+        if self.isMetadata(line) or self.isAutoReport(line):
+            return False
+
         tokens = CommandBase.tokenize(line, 11, replace=':')
 
         if tokens[0] != 'ok' or \
