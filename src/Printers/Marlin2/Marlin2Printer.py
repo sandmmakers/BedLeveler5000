@@ -261,10 +261,10 @@ class GetTemperaturesMachine(Marlin2Machine):
     def _enterDone(self, reply):
         self.finish(self.gotTemperatures, GetTemperaturesResult(toolActual = reply['toolActual'],
                                                                 toolDesired = reply['toolDesired'],
-                                                                toolPower = reply['toolPower'],
+                                                                toolPower = reply['toolPower'] / 127,
                                                                 bedActual = reply['bedActual'],
                                                                 bedDesired = reply['bedDesired'],
-                                                                bedPower = reply['bedPower']))
+                                                                bedPower = reply['bedPower'] / 127))
 
 class GetProbeOffsetsMachine(Marlin2Machine):
     TYPE = CommandType.GET_PROBE_OFFSETS
