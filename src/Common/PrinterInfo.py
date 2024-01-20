@@ -147,9 +147,14 @@ class _PrinterInfo:
             else:
                 self.connection = MoonrakerConnection()
 
+            nameSet = set()
             self.screwType = ScrewType.fromValue(data['screwType'])
             self.manualProbePoints.clear()
             for point in data['manualProbePoints']:
+                if point['name'] in nameSet:
+                    raise ValueError('Duplicate manual probe point name (' + point['name'] + ') found in file:\n' + str(filePath))
+                nameSet.add(point['name'])
+
                 self.manualProbePoints.append(GridProbePoint(point['name'],
                                                              point['fixed'],
                                                              point['row'],

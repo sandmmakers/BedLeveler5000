@@ -18,12 +18,13 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
     MAXIMUM = 999
     DECIMALS = 3
 
-    def __init__(self, *args, host, port, printerInfo, gridPoint, **kwargs):
+    def __init__(self, *args, host, port, printerInfo, gridPoint, existingNames, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setWindowTitle('Configure Grid Point')
         self.xOffset = None
         self.yOffset = None
+        self.existingNames = existingNames
 
         self.__createWidgets(gridPoint)
         self.__layoutWidgets()
@@ -76,7 +77,7 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
         self.fixedComboBox.setCurrentText('Yes' if point.fixed else 'No')
 
         self.okButton = QtWidgets.QPushButton('Ok')
-        self.okButton.clicked.connect(self.accept)
+        self.okButton.clicked.connect(self.finish)
         self.okButton.setToolTip('Name field must be set.')
 
         self.cancelButton = QtWidgets.QPushButton('Cancel')
@@ -122,11 +123,11 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
         self.printer.close()
         self.timer.stop()
 
-    def finish(self, accept):
-        if accept:
-            self.accept()
+    def finish(self):
+        if self.point().name in self.existingNames:
+            QtWidgets.QMessageBox.warning(self, 'Error', 'Name already in use by another manual probe point.')
         else:
-            self.reject()
+            self.accept()
 
     def getProbeOffsets(self, probe):
         self.timer.start(self.TIMEOUT)
@@ -211,6 +212,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--column', default=0, type=int, help='column value')
     parser.add_argument('-x', default=0.0, type=float, help='x coordinate')
     parser.add_argument('-y', default=0.0, type=float, help='y coordinate')
+    parser.add_argument('-e', '--existing-names', nargs='*', default=[], help='names of existing points')
     parser.add_argument('--log-level', choices=['all', 'debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
     parser.add_argument('--log-console', action='store_true', help='log to the console')
     parser.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
@@ -230,7 +232,11 @@ if __name__ == '__main__':
                                column = args.column,
                                x = args.x,
                                y = args.y)
-    configureGridPointDialog = ConfigureGridPointDialog(printerInfo=printerInfo, port=args.port, host=args.host, gridPoint=gridPoint)
+    configureGridPointDialog = ConfigureGridPointDialog(printerInfo=printerInfo,
+                                                        port=args.port,
+                                                        host=args.host,
+                                                        gridPoint=gridPoint,
+                                                        existingNames = args.existing_names)
 
     try:
         if configureGridPointDialog.exec() == QtWidgets.QDialog.Accepted:

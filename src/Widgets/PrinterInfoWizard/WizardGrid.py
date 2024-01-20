@@ -140,6 +140,17 @@ class Grid(QtWidgets.QGroupBox):
 
         return points
 
+    def getNames(self):
+        names = []
+
+        for row in range(self.gridLayout.rowCount()):
+            for column in range(self.gridLayout.columnCount()):
+                cell = self.gridLayout.itemAtPosition(row, column).widget()
+                if cell.isSet():
+                    names.append(cell.point.name)
+
+        return names
+
 if __name__ == '__main__':
     # Main only imports
     import sys
@@ -158,12 +169,35 @@ if __name__ == '__main__':
                                  x = 3,
                                  y=123.12))
 
-    print(grid.getPoints())
+    grid.setPoint(GridProbePoint(name = 'H',
+                                 fixed = True,
+                                 row = 1,
+                                 column = 1,
+                                 x = 30,
+                                 y=223.12))
+
+    getNamesButton = QtWidgets.QPushButton('Get Names')
+    getNamesButton.clicked.connect(lambda: print(grid.getNames()))
+
+    getPointsButton = QtWidgets.QPushButton('Get Points')
+    getPointsButton.clicked.connect(lambda: print(grid.getPoints()))
+
+    buttonsLayout = QtWidgets.QHBoxLayout()
+    buttonsLayout.addStretch()
+    buttonsLayout.addWidget(getNamesButton)
+    buttonsLayout.addStretch()
+    buttonsLayout.addWidget(getPointsButton)
+    buttonsLayout.addStretch()
+    buttonsWidget = QtWidgets.QWidget()
+    buttonsWidget.setLayout(buttonsLayout)
 
     layout = QtWidgets.QGridLayout()
+
     layout.addWidget(QtWidgets.QLabel(), 0, 0)
     layout.addWidget(grid, 1, 1)
     layout.addWidget(QtWidgets.QLabel(), 2, 2)
+    layout.addWidget(buttonsWidget, 2, 1)
+
     layout.setColumnStretch(0, 100)
     layout.setColumnStretch(2, 100)
     layout.setRowStretch(0, 100)

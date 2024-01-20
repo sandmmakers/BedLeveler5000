@@ -308,7 +308,8 @@ class PrinterInfoWizard(QtWidgets.QMainWindow):
         dialog = ConfigureGridPointDialog(host = self.hostLineEdit.text(),
                                           port = self.portComboBox.currentText(),
                                           printerInfo = self.currentPrinterInfo(),
-                                          gridPoint = gridProbePoint)
+                                          gridPoint = gridProbePoint,
+                                          existingNames = self.grid.getNames())
         if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             self.grid.setPoint(dialog.point())
 
