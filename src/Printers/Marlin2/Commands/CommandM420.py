@@ -1,3 +1,4 @@
+from .GCodeError import GCodeError
 from .CommandBase import CommandBase
 from . import Converter
 
@@ -31,9 +32,11 @@ class CommandM420(CommandBase):
         # ...
         # Line ?: ok
 
-        if self.isMetadata(line) or \
-           (self.isAutoReport(line) and self.result is None):
-            return False
+        if self.isAutoReport(line) or self.isComment(line):
+            if self.result is None:
+                return False
+            else:
+                raise GCodeError(f'Unexpected line in M420 command response: [{line}].')
 
         if self.result is None:
             self.result = {'response': []}

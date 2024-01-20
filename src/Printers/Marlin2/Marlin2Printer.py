@@ -340,9 +340,15 @@ class GetMeshCoordinatesMachine(Marlin2Machine):
         # Determine xCount and yCount
         foundBilinear = False
         for line in reply['response']:
-            if not foundBilinear:
+            # Skip echo lines
+            if line.startswith('echo:'):
+                continue
+            elif not foundBilinear:
                 if 'Bilinear Leveling Grid:' in line:
                     foundBilinear = True
+                else:
+                    self.reportError('Detected an unexpected line.')
+                    return
             else:
                 tokens = line.split()
                 if len(tokens) > 0:
@@ -358,7 +364,9 @@ class GetMeshCoordinatesMachine(Marlin2Machine):
                                 return
                             self.yCount += 1
 
-        if not foundBilinear or self.xCount is None or self.yCount == 0:
+        if foundBilinear == False:
+            self.reportError('No mesh found. Please perform automatic bed leveling and try again.')
+        elif self.xCount is None or self.yCount == 0:
             self.reportError('Failed to parse the M420 output.')
         else:
             self.setTransition(self._enterMoveToFrontLeftPosition)
