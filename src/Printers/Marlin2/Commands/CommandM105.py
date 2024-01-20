@@ -14,7 +14,7 @@ class CommandM105(CommandBase):
         super().__init__(self.NAME + rPart + tPart)
 
     def _processLine(self, line):
-        # Line 0: 'ok T:<FLOAT> /<FLOAT> B:<FLOAT> /<FLOAT> @:<FLOAT> B@:<FLOAT>
+        # Line 0: 'ok T:<FLOAT> /<FLOAT> B:<FLOAT> /<FLOAT> @:<FLOAT> B@:<FLOAT>'
         #          |  |         |        |         |        |         +----------- Bed power
         #          |  |         |        |         |        +--------------------- Tool power
         #          |  |         |        |         +------------------------------ Bed temp (desired)
@@ -26,25 +26,71 @@ class CommandM105(CommandBase):
         if self.isMetadata(line) or self.isAutoReport(line):
             return False
 
-        tokens = CommandBase.tokenize(line, 11, replace=':')
+        bedPower = None
+        bedTempDesired = None
+        bedTempActual = None
+        toolPower = None
+        toolTempDesired = None
+        toolTempActual = None
+        tokens = line.replace(':', ' ').split()
 
-        if tokens[0] != 'ok' or \
-           tokens[1] != 'T' or \
-           not tokens[3].startswith('/') or \
-           tokens[4] != 'B' or \
-           not tokens[6].startswith('/') or \
-           tokens[7] != '@' or \
-           tokens[9] != 'B@':
+        if tokens[0] != 'ok':
             raise GCodeError(f'Unable to parse response: [{line}].')
 
         try:
-            self.result = {'toolActual':  float(tokens[2]),
-                           'toolDesired': float(tokens[3][1:]),
-                           'bedActual':   float(tokens[5]),
-                           'bedDesired':  float(tokens[6][1:]),
-                           'toolPower':   float(tokens[8]),
-                           'bedPower':    float(tokens[10])}
-        except ValueError:
-            raise GCodeError(f'Incorrect numeric data type found in response: [{line}].')
+            index = 1
+            while index < len(tokens):
+                if tokens[index].startswith('T'):
+                    isCurrent = tokens[index] == 'T'
+                    if isCurrent:
+                        toolTempActual = float(tokens[index+1])
+                    index += 2
+
+                    if tokens[index].startswith('/'):
+                        if isCurrent:
+                            toolTempDesired = float(tokens[index][1:])
+                        index += 1
+
+                elif tokens[index] == 'B':
+                    if isCurrent:
+                        bedTempActual = float(tokens[index+1])
+                    index += 2
+
+                    if tokens[index].startswith('/'):
+                        bedTempDesired = float(tokens[index][1:])
+                        index += 1
+
+                elif tokens[index] == 'C':
+                    index += 2
+                    if tokens[index].startswith('/'):
+                        index += 1
+
+                elif tokens[index] == '@':
+                    toolPower = float(tokens[index+1])
+                    index += 2
+
+                elif tokens[index] == 'B@':
+                    bedPower = float(tokens[index+1])
+                    index += 2
+
+                elif tokens[index] == 'P':
+                    index += 2
+
+                elif tokens[index] == 'A':
+                    index += 2
+
+                else:
+                    raise GCodeError(f'Unable to parse response: [{line}].')
+        except IndexError as exception:
+            raise GCodeError(f'Unable to parse response: [{line}].') from exception
+        except ValueError as exception:
+            raise GCodeError(f'Incorrect numeric data type found in response: [{line}].') from exception
+
+        self.result = {'toolActual':  toolTempActual,
+                       'toolDesired': toolTempDesired,
+                       'bedActual':   bedTempActual,
+                       'bedDesired':  bedTempDesired,
+                       'toolPower':   toolPower,
+                       'bedPower':    bedPower}
 
         return True
