@@ -12,6 +12,7 @@ from PySide6 import QtGui
 from PySide6 import QtWidgets
 from PySide6 import QtNetwork
 import argparse
+import logging
 import pathlib
 import signal
 import sys
@@ -469,6 +470,7 @@ if __name__ == '__main__':
 
     # Configure logging
     Common.configureLogging(level=args.log_level, console=args.log_console, file=args.log_file)
+    logging.getLogger(QtCore.QCoreApplication.applicationName()).info(f'Starting {app.applicationName()}')
 
     # Verify the printers directory exists
     if args.printers_dir is not None and not args.printers_dir.exists():

@@ -353,6 +353,7 @@ if __name__ == '__main__':
 
     # Configure logging
     Common.configureLogging(level=args.log_level, console=args.log_console, file=args.log_file)
+    logging.getLogger(QtCore.QCoreApplication.applicationName()).info(f'Starting {app.applicationName()}')
 
     printerInfoWizard = PrinterInfoWizard()
     printerInfoWizard.show()
