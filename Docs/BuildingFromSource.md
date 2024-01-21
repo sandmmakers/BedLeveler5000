@@ -10,6 +10,7 @@
 5) Clone the repository
    ```
    git clone https://github.com/sandmmakers/BedLeveler5000.git
+   git submodule update --init --recursive 
    ```
 6) Enter the repository
    ```
@@ -90,6 +91,7 @@
 4) Clone the repository
    ```
    git clone https://github.com/sandmmakers/BedLeveler5000.git
+   git submodule update --init --recursive
    ```
 5) Enter the repository
    ```
