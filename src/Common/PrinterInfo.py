@@ -49,7 +49,7 @@ class ScrewType(enum.Enum):
     def fromValue(cls, value):
         for value_ in ScrewType:
             if value_.value == value:
-                return value
+                return value_
         raise ValueError('Unknown enum value')
 
 @enum.verify(enum.UNIQUE)
