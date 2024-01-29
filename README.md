@@ -59,6 +59,36 @@ to use **Bed Leveler 5000**.
 3) Extract the downloaded archive
 4) Launch **BedLeveler5000**, **PrinterInfoWizard**, or **InspectorG-code**
 
+### MacOS
+1) Download the **BedLeveler5000-vX.X.X-macos-x86_64.tgz** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
+2) Open a terminal
+3) Extract archive
+   ```
+   tar xvf BedLeveler5000-vX.X.X-macos-x86_64.tgz
+   ```
+5) Enter directory
+   ```
+   cd BedLeveler5000-vX.X.X-macos-x86_64
+   ```
+6) Add execute permissions
+   ```
+   chmod +x BedLeveler5000 PrinterInfoWizard InspectorG-code PrinterTester
+   ```
+7) Run desired application
+    - Bed Leveler 5000
+      ```
+      ./BedLeveler5000
+      ```
+
+    - Printer Info Wizard
+      ```
+      ./PrinterInfoWizard
+      ```
+    - Inspector G-code
+      ```
+      ./InspectorG-code
+      ```
+
 ## Release integrity
 Starting with version **v0.4.0**, releases are cryptographically signed with the GPG key [03E565C3F0C71CB2] and are fully automated.
 
