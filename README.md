@@ -15,6 +15,7 @@ to use **Bed Leveler 5000**.
 - Utility for testing and exploring G-code commands
 
 ## Documentation
+- **Bed Leveler 5000** Windows install video: [Bed Leveler 5000 Windows installation][BedLeveler5000WindowsInstallVideo]
 - **Bed Leveler 5000** Klipper support video: [Bed Leveler 5000 Klipper support][BedLeveler5000KlipperVideo]
 - **Bed Leveler 5000** introduction video: [Bed Leveler 5000][BedLeveler5000Video]
 - **Printer Info Wizard** Klipper support video: [Printer Info Wizard Klipper support][PrinterInfoWizardKlipperVideo]
@@ -73,6 +74,7 @@ GPLv3
 
    [BedLeveler5000]: <https://sandmmakers.com/Projects/BedLeveler5000>
    [git-repo-url]: <https://github.com/sandmmakers/BedLeveler5000.git>
+   [BedLeveler5000WindowsInstallVideo]: <https://youtu.be/QwbeFVCBk6Q>
    [BedLeveler5000KlipperVideo]: <https://youtu.be/JBGN3U0C2LM>
    [BedLeveler5000Video]: <https://youtu.be/j5rzlHdtJAo>
    [PrinterInfoWizardKlipperVideo]: <https://youtu.be/VC4FoqCr5-g>
