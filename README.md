@@ -36,8 +36,10 @@ to use **Bed Leveler 5000**.
 [Bed Leveler 5000][BedLeveler5000], [Printer Info Wizard][BedLeveler5000], and [Inspector G-code][InspectorG-code] themselves are open source with a [public repository][bedleveler5000] on GitHub.
 
 ## Installation
+>[!NOTE]
+> In the following directions, replace `vX.X.X` with the desired version of Bed Leveler 5000.
 ### Windows
-1) Download the **.7z** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
+1) Download the **BedLeveler5000-vX.X.X-windows-x86_64.7z** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
 2) Extract the downloaded archive
 3) Launch **BedLeveler5000.exe**, **PrinterInfoWizard.exe**, or **InspectorG-code.exe**
 
@@ -55,7 +57,7 @@ to use **Bed Leveler 5000**.
        sudo usermod -a -G dialout $USER
        ```
     3) Reboot to ensure all changes take effect
-2) Download the **.tgz** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
+2) Download the **BedLeveler5000-vX.X.X-linux-x86_64.tgz** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
 3) Extract the downloaded archive
 4) Launch **BedLeveler5000**, **PrinterInfoWizard**, or **InspectorG-code**
 
