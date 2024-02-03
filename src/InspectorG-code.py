@@ -59,7 +59,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.commandLineEdit.textChanged.connect(self._updateState)
 
         self.sendCommandButton = QtWidgets.QPushButton('Send')
-        self.sendCommandButton.clicked.connect(lambda : self.sendCommand(self.commandLineEdit.text()))
+        self.sendCommandButton.clicked.connect(self.sendCommand)
 
         self.logTextEdit = QtWidgets.QTextEdit()
         self.logTextEdit.setReadOnly(True)
@@ -67,8 +67,11 @@ class MainWindow(QtWidgets.QMainWindow):
         font.setFamily('Courier New')
         self.logTextEdit.document().setDefaultFont(font)
 
+        self.autoClearCheckBox = QtWidgets.QCheckBox('Auto Clear')
+        self.autoClearCheckBox.setChecked(True)
+
         self.clearButton = QtWidgets.QPushButton('Clear')
-        self.clearButton.clicked.connect(self.logTextEdit.clear)
+        self.clearButton.clicked.connect(self.clear)
 
     def _layoutWidgets(self):
         # Command layout
@@ -77,17 +80,18 @@ class MainWindow(QtWidgets.QMainWindow):
         commandLayout.addWidget(self.commandLineEdit)
         commandLayout.addWidget(self.sendCommandButton)
 
-        # Clear layout
-        clearLayout = QtWidgets.QHBoxLayout()
-        clearLayout.addStretch()
-        clearLayout.addWidget(self.clearButton)
-        clearLayout.addStretch()
+        # button layout
+        buttonLayout = QtWidgets.QHBoxLayout()
+        buttonLayout.addStretch()
+        buttonLayout.addWidget(self.autoClearCheckBox)
+        buttonLayout.addWidget(self.clearButton)
+        buttonLayout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.printerConnectWidget)
         layout.addLayout(commandLayout)
         layout.addWidget(self.logTextEdit)
-        layout.addLayout(clearLayout)
+        layout.addLayout(buttonLayout)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
@@ -171,9 +175,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.printer = None
         self._updateState()
 
-    def sendCommand(self, command):
+    def clear(self):
+        self.logTextEdit.clear()
+
+    def sendCommand(self):
         assert(self.printer.connected())
-        self.printer.sendCommand(command)
+        if self.autoClearCheckBox.isChecked():
+            self.clear()
+        self.printer.sendCommand(self.commandLineEdit.text())
 
     def _logCommand(self, command):
         self.logTextEdit.append(f'SENT: \'{command}\'')
