@@ -12,7 +12,6 @@ class Printer(QtCore.QObject):
         # Create logger
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    @loggedFunction
     def connected(self, *args, **kwargs):
         return self._connected(*args, **kwargs)
 
