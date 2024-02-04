@@ -13,6 +13,7 @@ class CommandM211(CommandBase):
         super().__init__(self.NAME + sPart)
 
     def _processLine(self, line):
+        # Normal
         # Setting:
         # Line 0: 'ok'
 
@@ -20,6 +21,24 @@ class CommandM211(CommandBase):
         # Line 0: '  M211 S1 ; ON'
         # Line 1: '  Min:  X0.00 Y-6.00 Z0.00   Max:  X430.00 Y430.00 Z500.00'
         # Line 2: 'ok'
+
+        # Ender series
+        # Setting and querying
+        # Line 0: 'echo:Soft endstops: ON  Min:  X0.00 Y0.00 Z0.00   Max:  X235.00 Y235.00 Z250.00'
+        # Line 1: 'ok'
+
+        if line.startswith('echo:Soft endstops'):
+            if self.s is not None:
+                return False
+
+            if 'ON' in line:
+                self.result = {'on': True}
+                line = line[line.find('ON')+2:]
+            elif 'OFF' in line:
+                self.result = {'on': False}
+                line = line[line.find('OFF')+3:]
+            else:
+                raise GCodeError(f'Unable to parse response: [{line}].')
 
         if self.isMetadata(line) or \
            (self.isAutoReport(line) and self.result is None):

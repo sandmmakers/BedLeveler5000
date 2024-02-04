@@ -351,6 +351,12 @@ class GetMeshCoordinatesMachine(Marlin2Machine):
                     return
             else:
                 tokens = line.split()
+                if len(tokens) == 0 and \
+                   foundBilinear and \
+                   self.xCount is not None and \
+                   self.yCount is not None:
+                    break
+
                 if len(tokens) > 0:
                     if self.stringIsInteger(tokens[0]):
                         if self.xCount is None:

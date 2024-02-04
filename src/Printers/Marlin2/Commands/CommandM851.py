@@ -26,6 +26,13 @@ class CommandM851(CommandBase):
         #            +------------------------------------------- G-code command name
         # Line 1: ok
 
+        # Ender
+        # Line 0: 'Probe Offset X-40.00 Y-5.00 Z-1.08'
+        # Line 1: 'ok'
+
+        if line.startswith('Probe Offset'):
+            line = '  M851' + line[12:] + ' ; (mm)'
+
         if self.isMetadata(line) or \
            (self.isAutoReport(line) and self.result is None):
             return False
