@@ -1,0 +1,41 @@
+{
+    "version": 3,
+    "displayName": "Ender-3 V2 (Klipper)",
+    "connectionMode": "Moonraker",
+    "connection": {},
+    "screwType": "CW-M4",
+    "manualProbePoints": [
+        {
+            "name": "1",
+            "fixed": false,
+            "row": 2,
+            "column": 0,
+            "x": 33,
+            "y": 31
+        },
+        {
+            "name": "2",
+            "fixed": false,
+            "row": 0,
+            "column": 0,
+            "x": 33,
+            "y": 201
+        },
+        {
+            "name": "3",
+            "fixed": false,
+            "row": 0,
+            "column": 2,
+            "x": 202.5,
+            "y": 201
+        },
+        {
+            "name": "4",
+            "fixed": false,
+            "row": 2,
+            "column": 2,
+            "x": 202.5,
+            "y": 31
+        }
+    ]
+}

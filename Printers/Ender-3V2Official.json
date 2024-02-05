@@ -1,0 +1,47 @@
+{
+    "version": 3,
+    "displayName": "Ender-3 V2 (Official)",
+    "connectionMode": "Marlin2",
+    "connection": {
+        "baudRate": "115200",
+        "dataBits": "8",
+        "parity": "No",
+        "stopBits": "1",
+        "flowControl": "No"
+    },
+    "screwType": "CW-M4",
+    "manualProbePoints": [
+        {
+            "name": "1",
+            "fixed": false,
+            "row": 2,
+            "column": 0,
+            "x": 34,
+            "y": 29
+        },
+        {
+            "name": "2",
+            "fixed": false,
+            "row": 0,
+            "column": 0,
+            "x": 34,
+            "y": 199
+        },
+        {
+            "name": "3",
+            "fixed": false,
+            "row": 0,
+            "column": 2,
+            "x": 195.0,
+            "y": 199
+        },
+        {
+            "name": "4",
+            "fixed": false,
+            "row": 2,
+            "column": 2,
+            "x": 195.0,
+            "y": 29
+        }
+    ]
+}
