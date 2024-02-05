@@ -272,11 +272,24 @@ class MoonrakerMachine(QtCore.QObject):
         return cls._getField(replyJson, configPath)
 
     @classmethod
-    def _getConfigSection(cls, config, sectionName):
+    def _getConfigSection(cls, config, sectionName, *, allowMissing=False):
         section = config.get(sectionName)
         if section is None:
-            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'{sectionName}\' section not found in \'printer.cfg\'.')
+            if allowMissing:
+                return None
+            else:
+                raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'{sectionName}\' section not found in \'printer.cfg\'.')
         return cls.ConfigSection(sectionName, section)
+
+    @classmethod
+    def _getConfigSectionProbeLike(cls, config):
+        section = cls._getConfigSection(config, 'bltouch', allowMissing=True)
+        if section is None:
+            section = cls._getConfigSection(config, 'probe', allowMissing=True)
+
+        if section is None:
+            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'bltouch\' nor \'probe\' section not found in \'printer.cfg\'.')
+        return section
 
     @classmethod
     def _getConfigSectionValue(cls, section, valueName, type_=None, default=None):
@@ -328,11 +341,11 @@ class InitMachine(MoonrakerMachine):
     def _enterDone(self, replyJson):
         # Get sections
         config = self._getConfig(replyJson)
-        probe = self._getConfigSection(config, 'probe')
+        probeLike = self._getConfigSectionProbeLike(config)
         bedMesh = self._getConfigSection(config, 'bed_mesh')
 
         # Get probe sample count
-        self.probeSampleCount = self._getConfigSectionValue(probe, 'samples', int, default=1)
+        self.probeSampleCount = self._getConfigSectionValue(probeLike, 'samples', int, default=1)
 
         # Get probe z-height
         self.probeZHeight = self._getConfigSectionValue(bedMesh, 'horizontal_move_z', float, default=5)
@@ -342,7 +355,7 @@ class InitMachine(MoonrakerMachine):
         self.probeXYSpeed = self._getConfigSectionValue(bedMesh, 'speed', float, 50)
 
         # Get probe offsets
-        self.probeXOffset, self.probeYOffset, self.probeZOffset = self._getConfigSectionProbeOffsets(probe)
+        self.probeXOffset, self.probeYOffset, self.probeZOffset = self._getConfigSectionProbeOffsets(probeLike)
 
         # Get travel bounds
         self.travelBoundsMinX, self.travelBoundsMaxX, self.travelBoundsMinY, self.travelBoundsMaxY, self.travelBoundsMinZ, self.travelBoundsMaxZ = self._getConfigSectionTravelBounds(config)
@@ -413,9 +426,9 @@ class GetProbeOffsetsMachine(MoonrakerMachine):
 
     def _enterDone(self, replyJson):
         config = self._getConfig(replyJson)
-        probe = self._getConfigSection(config, 'probe')
+        probeLike = self._getConfigSectionProbeLike(config)
 
-        xOffset, yOffset, zOffset = self._getConfigSectionProbeOffsets(probe)
+        xOffset, yOffset, zOffset = self._getConfigSectionProbeOffsets(probeLike)
 
         # Finish
         self.finish(self.gotProbeOffsets,
@@ -566,8 +579,8 @@ class GetDefaultProbeSampleCountMachine(MoonrakerMachine):
 
     def _enterDone(self, replyJson):
         config = self._getConfig(replyJson)
-        probe = self._getConfigSection(config, 'probe')
-        probeSampleCount = self._getConfigSectionValue(probe, 'samples', int, default=1)
+        probeLike = self._getConfigSectionProbeLike(config)
+        probeSampleCount = self._getConfigSectionValue(probeLike, 'samples', int, default=1)
 
         self.finish(self.gotDefaultProbeSampleCount, probeSampleCount)
 
@@ -630,9 +643,9 @@ class ProbeMachine(MoonrakerMachine):
 
     def _enterRaise(self, replyJson):
         config = self._getConfig(replyJson)
-        probe = self._getConfigSection(config, 'probe')
+        probeLike = self._getConfigSectionProbeLike(config)
 
-        self.probeXOffset, self.probeYOffset, _ = self._getConfigSectionProbeOffsets(probe)
+        self.probeXOffset, self.probeYOffset, _ = self._getConfigSectionProbeOffsets(probeLike)
 
         self.setTransition(self._enterWaitForRaise)
         self.getGCode(f'G0 Z{self.probeHeight}')
