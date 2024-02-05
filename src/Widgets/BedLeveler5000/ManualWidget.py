@@ -37,6 +37,7 @@ class ManualWidget(QtWidgets.QWidget):
         self._createWidgets()
         self._layoutWidgets()
         self._updateState()
+        self.clear()
 
     def _createWidgets(self):
         # Test button area
@@ -70,7 +71,7 @@ class ManualWidget(QtWidgets.QWidget):
 
         # Clear button
         self.clearButton = QtWidgets.QPushButton('Clear')
-        self.clearButton.clicked.connect(lambda x: self.log.clear())
+        self.clearButton.clicked.connect(self.clear)
 
     def _layoutWidgets(self):
         buttonLayout = QtWidgets.QHBoxLayout()
@@ -113,6 +114,10 @@ class ManualWidget(QtWidgets.QWidget):
             defaultReference = printerInfo.manualProbePoints[0]
         self.referenceComboBox.setCurrentText(defaultReference.name)
 
+    def clear(self):
+        self.previousCommand = None
+        self.log.clear()
+
     def _updateState(self):
         self.referenceComboBox.setEnabled(self.directionComboBox.currentData() == self.Direction.ANY)
 
@@ -133,7 +138,11 @@ class ManualWidget(QtWidgets.QWidget):
             self._reportAllProbe(resultList)
 
     def _reportSingleProbe(self, result):
+        if self.previousCommand is self.Command.ALL:
+            self.log.append('--------------------------------------------------')
+
         self.log.append(f'Probed {result.name} ({result.x}, {result.y}): {result.z:.3f}')
+        self.previousCommand = self.Command.SINGLE
 
     def _reportAllProbe(self, resultList):
         referenceName, relativeDistanceList = self._relativeDistances(resultList,
@@ -141,7 +150,9 @@ class ManualWidget(QtWidgets.QWidget):
                                                                       self.directionComboBox.currentData(),
                                                                       self.printerInfo.screwType.clockwise)
 
-        self.log.append('--------------------------------------------------')
+        if self.previousCommand is not None:
+            self.log.append('--------------------------------------------------')
+
         for raw, relative in zip(resultList, relativeDistanceList):
             assert(raw.name == relative.name)
             prefix = f'Probed {raw.name} ({raw.x}, {raw.y}): {raw.z:.3f} '
@@ -185,6 +196,7 @@ class ManualWidget(QtWidgets.QWidget):
                 suffix = f'(Adjust: {value}{units}{sign})'
 
             self.log.append(prefix + suffix)
+            self.previousCommand = self.Command.ALL
 
     @classmethod
     def _relativeDistances(self, probeList, referenceName, direction, clockwiseScrew):
