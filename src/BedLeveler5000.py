@@ -356,13 +356,18 @@ class MainWindow(QtWidgets.QMainWindow):
                                      column=column,
                                      z=response.z)
 
-            column += 1
-            if column >= len(self.meshCoordinates[0]):
-                column = 0
-                row += 1
-                if row >= len(self.meshCoordinates):
-                    row  = 0
-            if row == 0 and column == 0:
+            if row % 2 == 0:
+                column += 1
+                if column >= len(self.meshCoordinates[0]):
+                    column = len(self.meshCoordinates[0]) - 1
+                    row += 1
+            else:
+                column -= 1
+                if column < 0:
+                    column = 0
+                    row += 1
+
+            if row >= len(self.meshCoordinates):
                 self.dialogs[self.Dialog.PROBE].accept()
                 self.updateState(self.State.CONNECTED)
             else:
