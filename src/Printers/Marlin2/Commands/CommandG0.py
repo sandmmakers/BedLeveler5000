@@ -21,3 +21,10 @@ class CommandG0(OkCommand):
         zPart = '' if self.z is None else Converter.floatToStr(self.z, prefix=' Z')
 
         super().__init__(self.NAME + ePart + fPart + sPart + xPart + yPart + zPart)
+
+    def _processLine(self, line):
+        if line == 'echo: cold extrusion prevented':
+            self.result = {'warning': 'cold extrusion prevented'}
+            return False
+
+        return super()._processLine(line)
