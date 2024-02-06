@@ -41,7 +41,7 @@ class CommandM105(CommandBase):
             index = 1
             while index < len(tokens):
                 if tokens[index].startswith('T'):
-                    isCurrent = tokens[index] == 'T'
+                    isCurrent = toolTempActual is None and (tokens[index] in ['T', 'T0'])
                     if isCurrent:
                         toolTempActual = float(tokens[index+1])
                     index += 2
@@ -65,8 +65,9 @@ class CommandM105(CommandBase):
                     if tokens[index].startswith('/'):
                         index += 1
 
-                elif tokens[index] == '@':
-                    toolPower = float(tokens[index+1])
+                elif tokens[index].startswith('@'):
+                    if tokens[index] == '@':
+                        toolPower = float(tokens[index+1])
                     index += 2
 
                 elif tokens[index] == 'B@':
