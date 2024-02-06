@@ -21,3 +21,9 @@ class CommandG28(PositionOkCommand):
 
         super().__init__(self.NAME + lPart + oPart + rPart + xPart + yPart + zPart)
 
+
+    def _processLine(self, line):
+        if line == 'Taring probe':
+            return False
+
+        return super()._processLine(line)

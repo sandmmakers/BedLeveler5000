@@ -1,15 +1,12 @@
 from .CommandBase import CommandBase
 
 class PositionOkCommand(CommandBase):
-    IGNORE_LINES = ['Taring probe'] # Observed with a Neptune 3 Pro
-
     def _processLine(self, line):
         # Line 0: position
         # Line 1: ok
 
         # Check for ignore lines
-        if self.isMetadata(line) or \
-           line in self.IGNORE_LINES:
+        if self.isMetadata(line):
             return False
 
         if self.isTemperatureAutoReport(line):

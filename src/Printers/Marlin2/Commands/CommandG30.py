@@ -25,8 +25,9 @@ class CommandG30(CommandBase):
         # Line 1: position
         # Line 2: ok
 
-        # Skip metadata and autoreporting
-        if self.isMetadata(line) or \
+        # Skip taring, metadata, and autoreporting
+        if line == 'Taring probe' or \
+           self.isMetadata(line) or \
            (self.result is None and self.isAutoReport(line)):
             return False
 
