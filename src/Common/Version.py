@@ -1,9 +1,17 @@
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
 def gitHash():
+    if hasattr(sys, '_MEIPASS'):
+        with open(pathlib.Path(sys._MEIPASS)/ 'GIT_HASH', 'r') as file:
+            gitHash = file.read().strip()
+            if re.fullmatch('[0-9A-F]{40}(-dirty)?', gitHash) is None:
+                raise IOError('Invalid GIT_HASH file detected.')
+            return gitHash
+
     command = ['git', 'describe', '--always', '--dirty', '--abbrev=40', '--match=\'NoTagWithThisName\'']
 
     try:
@@ -12,7 +20,9 @@ def gitHash():
         raise IOError(f'Failed to find the {command[0]} executable.')
     if result.returncode != 0 or len(result.stdout) < 41:
         raise IOError('Failed to get git hash.')
-    return result.stdout.decode().strip()
+
+    raw = result.stdout.decode().strip()
+    return raw[0:40].upper() + raw[40:]
 
 def _releaseFile():
     try:

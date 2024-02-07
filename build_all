@@ -8,9 +8,12 @@ SRC_DIR="${TOP_LEVEL_DIR}/src"
 SUBMODULES_DIR="${TOP_LEVEL_DIR}/Submodules"
 PYINSTALLER_DIR="${SUBMODULES_DIR}/Pyinstaller"
 
+# Common files
+VERSION_SCRIPT="${SRC_DIR}/Common/Version.py"
+
 # Buildsystem files
-CREATE_VERSION_FILE="${BUILD_SYSTEM_DIR}/CreateVersionFile.py"
-CREATE_RELEASE_VERSION_FILE="${BUILD_SYSTEM_DIR}/CreateReleaseVersionFile.py"
+CREATE_VERSION_FILE_SCRIPT="${BUILD_SYSTEM_DIR}/CreateVersionFile.py"
+CREATE_RELEASE_VERSION_FILE_SCRIPT="${BUILD_SYSTEM_DIR}/CreateReleaseVersionFile.py"
 REQUIREMENTS_TXT="${BUILD_SYSTEM_DIR}/requirements.txt"
 SPEC_FILE="${BUILD_SYSTEM_DIR}/BedLeveler5000.spec"
 
@@ -19,6 +22,7 @@ BUILD_DIR="${TOP_LEVEL_DIR}/Build"
 INSTALL_DIR="${TOP_LEVEL_DIR}/Install"
 INTERNAL_DIR="${INSTALL_DIR}/BedLeveler5000/_internal"
 BUILD_VENV="${BUILD_DIR}/build_venv"
+GIT_HASH_FILE="${BUILD_DIR}/GIT_HASH"
 
 # Setup PYTHONPATH
 export PYTHONPATH="${SRC_DIR}":"${SUBMODULES_DIR}"
@@ -101,13 +105,16 @@ if [ ${WINDOWS_SPECIFIC} = true ]; then
                 "InspectorG-Code.py" \
                 "PrinterTester.py"
     do
-        "${PYTHON_EXE}" "${CREATE_VERSION_FILE}" "${SRC_DIR}/${FILE}" "${BUILD_DIR}" ${TAG:+--tag "${TAG}"}
+        "${PYTHON_EXE}" "${CREATE_VERSION_FILE_SCRIPT}" "${SRC_DIR}/${FILE}" "${BUILD_DIR}" ${TAG:+--tag "${TAG}"}
     done
 fi
+
+# Create GIT_VERSION file
+${PYTHON_EXE} "${VERSION_SCRIPT}" --git-hash > "${GIT_HASH_FILE}"
 
 pyinstaller "${SPEC_FILE}" --workpath="${BUILD_DIR}" --distpath="${INSTALL_DIR}"
 
 # Create RELEASE_VERSION file if a tag was specified
 if [ ! -z "${TAG}" ]; then
-    ${PYTHON_EXE} "${CREATE_RELEASE_VERSION_FILE}" "${TAG}" "${INTERNAL_DIR}"
+    ${PYTHON_EXE} "${CREATE_RELEASE_VERSION_FILE_SCRIPT}" "${TAG}" "${INTERNAL_DIR}"
 fi
