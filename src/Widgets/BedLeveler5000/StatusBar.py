@@ -5,8 +5,6 @@ from PySide6 import QtGui
 from PySide6 import QtWidgets
 
 class StatusBar(QtWidgets.QStatusBar):
-    test = QtCore.Signal(QtCore.QPointF)
-
     class TempWidget(QtWidgets.QWidget):
         def __init__(self, name, *args, **kwargs):
             super().__init__(*args, **kwargs)
