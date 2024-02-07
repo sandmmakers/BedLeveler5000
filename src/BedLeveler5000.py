@@ -417,7 +417,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon((Common.baseDir() / 'Resources' / 'Icon-128x128.png').as_posix()))
+    app.setWindowIcon(QtGui.QIcon((Common.resourcesDir() / 'Icon-128x128.png').as_posix()))
     app.setApplicationName('Bed Leveler 5000')
     app.setApplicationVersion(Version.displayVersion())
 

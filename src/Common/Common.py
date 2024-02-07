@@ -13,6 +13,9 @@ def printersDir():
     parentDir = pathlib.Path(sys.executable).parent if getattr(sys, 'frozen', False) else baseDir()
     return parentDir / 'Printers'
 
+def resourcesDir():
+    return baseDir() / 'Resources'
+
 def toArgumentString(args, kwargs):
     arguments = ''
 
