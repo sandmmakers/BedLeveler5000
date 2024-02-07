@@ -11,11 +11,11 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._createWidgets()
-        self._layoutWidgets()
+        self.__createWidgets()
+        self.__layoutWidgets()
         self.resetButtons()
 
-    def _createWidgets(self):
+    def __createWidgets(self):
         # Bed widgets
         self.bedTempSpinBox = QtWidgets.QDoubleSpinBox()
         self.bedTempSpinBox.setMaximum(200)
@@ -42,7 +42,7 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
         self.nozzleHeaterButtonGroup.addButton(self.nozzleHeaterOnButton)
         self.nozzleHeaterButtonGroup.addButton(self.nozzleHeaterOffButton)
 
-    def _layoutWidgets(self):
+    def __layoutWidgets(self):
         groupBoxLayout = QtWidgets.QGridLayout()
         groupBoxLayout.addWidget(QtWidgets.QLabel('Desired Bed Temp (\x00\xB0C):'), 0, 0)
         groupBoxLayout.addWidget(self.bedTempSpinBox, 0, 1)

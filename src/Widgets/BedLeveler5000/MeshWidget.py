@@ -18,13 +18,13 @@ class MeshWidget(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._createWidgets()
-        self._layoutWidgets()
+        self.__createWidgets()
+        self.__layoutWidgets()
 
         # Ensure the display is in sync
         self.setDisplay()
 
-    def _createWidgets(self):
+    def __createWidgets(self):
         self.offsetMeshNumberWidget = MeshNumberWidget()
         self.meshNumberWidget = MeshNumberWidget()
         self.offsetMesh3DWidget = Mesh3DWidget()
@@ -47,7 +47,7 @@ class MeshWidget(QtWidgets.QWidget):
         self.rangeLineEdit = QtWidgets.QLineEdit()
         self.rangeLineEdit.setReadOnly(True)
 
-    def _layoutWidgets(self):
+    def __layoutWidgets(self):
         self.meshLayout = QtWidgets.QStackedLayout()
         self.meshLayout.addWidget(self.meshNumberWidget)
         self.meshLayout.addWidget(self.mesh3DWidget)

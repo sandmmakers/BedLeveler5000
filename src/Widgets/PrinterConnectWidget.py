@@ -31,12 +31,12 @@ class PrinterConnectWidget(QtWidgets.QWidget):
 
         self.hasHomeButton = hasHomeButton
 
-        self._createWidgets()
-        self._layoutWidgets()
+        self.__createWidgets()
+        self.__layoutWidgets()
 
         self.setDisconnected()
 
-    def _createWidgets(self):
+    def __createWidgets(self):
         self.printerComboBox = QtWidgets.QComboBox()
         self.printerComboBox.currentIndexChanged.connect(self._switchPrinter)
 
@@ -55,7 +55,7 @@ class PrinterConnectWidget(QtWidgets.QWidget):
             self.homeButton = QtWidgets.QPushButton('Home')
             self.homeButton.clicked.connect(self.homeRequested)
 
-    def _layoutWidgets(self):
+    def __layoutWidgets(self):
         layout = QtWidgets.QHBoxLayout()
         layout.addWidget(QtWidgets.QLabel('Printer:'))
         layout.addWidget(self.printerComboBox)
@@ -292,10 +292,10 @@ if __name__ == '__main__':
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
-            self._createWidgets()
-            self._layoutWidgets()
+            self.__createWidgets()
+            self.__layoutWidgets()
 
-        def _createWidgets(self):
+        def __createWidgets(self):
             self.withHomePrinterConnectWidget = PrinterConnectWidget()
             self.withHomePrinterConnectWidget.printerChanged.connect(lambda: print('withHomePrinterConnectWidget.printerChanged'))
             self.withHomePrinterConnectWidget.connectRequested.connect(self.withHomePrinterConnectWidget.setBusy)
@@ -314,7 +314,7 @@ if __name__ == '__main__':
             self.enumeratePortsButton = QtWidgets.QPushButton('Enumerate Ports')
             self.enumeratePortsButton.clicked.connect(self.enumeratePorts)
 
-        def _layoutWidgets(self):
+        def __layoutWidgets(self):
             withLayout = QtWidgets.QHBoxLayout()
             withLayout.setContentsMargins(0, 0, 0, 0)
             withLayout.addWidget(self.withHomePrinterConnectWidget)

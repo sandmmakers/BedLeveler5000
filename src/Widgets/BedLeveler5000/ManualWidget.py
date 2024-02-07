@@ -34,12 +34,12 @@ class ManualWidget(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._createWidgets()
-        self._layoutWidgets()
+        self.__createWidgets()
+        self.__layoutWidgets()
         self._updateState()
         self.clear()
 
-    def _createWidgets(self):
+    def __createWidgets(self):
         # Test button area
         self.manualProbeButtonArea = ManualProbeButtonArea()
         self.manualProbeButtonArea.probe.connect(self._probeSingle)
@@ -73,7 +73,7 @@ class ManualWidget(QtWidgets.QWidget):
         self.clearButton = QtWidgets.QPushButton('Clear')
         self.clearButton.clicked.connect(self.clear)
 
-    def _layoutWidgets(self):
+    def __layoutWidgets(self):
         buttonLayout = QtWidgets.QHBoxLayout()
         buttonLayout.addStretch()
         buttonLayout.addWidget(self.probeAllButton)

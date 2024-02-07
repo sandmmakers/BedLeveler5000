@@ -35,10 +35,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle(QtCore.QCoreApplication.applicationName())
         self.logger = logging.getLogger(QtCore.QCoreApplication.applicationName())
 
-        self._createWidgets()
-        self._layoutWidgets()
-        self._createMenus()
-        self._createDialogs()
+        self.__createWidgets()
+        self.__layoutWidgets()
+        self.__createMenus()
+        self.__createDialogs()
+        self.__createStatusBar()
 
         self.printer = None
         self.printerQtConnections = []
@@ -49,7 +50,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._updateState()
 
-    def _createWidgets(self):
+    def __createWidgets(self):
         # Printer connect widget
         self.printerConnectWidget = PrinterConnectWidget(hasHomeButton=False)
         self.printerConnectWidget.connectRequested.connect(self.connectToPrinter)
@@ -73,7 +74,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.clearButton = QtWidgets.QPushButton('Clear')
         self.clearButton.clicked.connect(self.clear)
 
-    def _layoutWidgets(self):
+    def __layoutWidgets(self):
         # Command layout
         commandLayout = QtWidgets.QHBoxLayout()
         commandLayout.addWidget(QtWidgets.QLabel('Command:'))
@@ -97,7 +98,7 @@ class MainWindow(QtWidgets.QMainWindow):
         widget.setLayout(layout)
         self.setCentralWidget(widget)
 
-    def _createMenus(self):
+    def __createMenus(self):
         # File menu
         self.fileMenu = QtWidgets.QMenu('File', self)
         self.exitAction = QtGui.QAction('Exit', self)
@@ -126,10 +127,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.helpMenu.addAction(self.aboutQtAction)
         self.menuBar().addMenu(self.helpMenu)
 
-    def _createStatusBar(self):
+    def __createStatusBar(self):
         self.statusBar()
 
-    def _createDialogs(self):
+    def __createDialogs(self):
         self.dialogs = {'about': AboutDialog(DESCRIPTION)}
 
     def _updateState(self):
