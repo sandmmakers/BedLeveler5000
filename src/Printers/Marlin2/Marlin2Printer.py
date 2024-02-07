@@ -217,10 +217,10 @@ class InitMachine(Marlin2Machine):
         self.probeYOffset = reply['y']
         self.probeZOffset = reply['z']
 
-        self.setTransition(self._enterDone)
+        self.setTransition(self._enterAbsolutePositioning)
         self.setCommand(self.commandConnection.sendM211())
 
-    def _enterDone(self, reply):
+    def _enterAbsolutePositioning(self, reply):
         self.travelBoundsMinX = reply['minX']
         self.travelBoundsMaxX = reply['maxX']
         self.travelBoundsMinY = reply['minY']
@@ -228,6 +228,10 @@ class InitMachine(Marlin2Machine):
         self.travelBoundsMinZ = reply['minZ']
         self.travelBoundsMaxZ = reply['maxZ']
 
+        self.setTransition(self._enterDone)
+        self.setCommand(self.commandConnection.sendG90())
+
+    def _enterDone(self, reply):
         self.finish(self.inited)
 
 class HomeMachine(Marlin2Machine):

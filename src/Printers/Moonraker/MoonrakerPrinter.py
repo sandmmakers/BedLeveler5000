@@ -335,10 +335,10 @@ class InitMachine(MoonrakerMachine):
 
     def _enterGetConfigFile(self, replyJson):
         self._verifyOk(replyJson, 'Homing failed during initialization.')
-        self.setTransition(self._enterDone)
+        self.setTransition(self._enterAbsolutePositioning)
         self.get('/printer/objects/query?configfile')
 
-    def _enterDone(self, replyJson):
+    def _enterAbsolutePositioning(self, replyJson):
         # Get sections
         config = self._getConfig(replyJson)
         probeLike = self._getConfigSectionProbeLike(config)
@@ -360,6 +360,10 @@ class InitMachine(MoonrakerMachine):
         # Get travel bounds
         self.travelBoundsMinX, self.travelBoundsMaxX, self.travelBoundsMinY, self.travelBoundsMaxY, self.travelBoundsMinZ, self.travelBoundsMaxZ = self._getConfigSectionTravelBounds(config)
 
+        self.setTransition(self._enterDone)
+        self.getGCode('G90')
+
+    def _enterDone(self, replyJson):
         # Done
         self.finish(self.inited)
 
