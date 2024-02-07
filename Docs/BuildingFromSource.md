@@ -102,6 +102,6 @@
    ./build_all
    ```
 
-   [Visual Studio] <https://visualstudio.microsoft.com>
+   [Visual Studio]: <https://visualstudio.microsoft.com>
    [Python]: <https://www.python.org>
    [Git for Windows]: <https://gitforwindows.org>
