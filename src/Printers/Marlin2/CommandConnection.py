@@ -70,15 +70,16 @@ class CommandConnection(SerialConnection):
         command.finished.connect(self._finished)
         command.errorOccurred.connect(self._errorOccurred)
 
-        self.logger.info(f'Sending command - {command}')
-        self.write(command.request)
-
-        if self.currentCommand is None:
-            self.currentCommand = command
-        else:
-            self.commandQueue.put(command)
-
+        self.logger.debug(f'Queing command - {command}')
+        self.commandQueue.put(command)
+        self._trySendNext()
         return command
+
+    def _trySendNext(self):
+        if self.currentCommand is None and not self.commandQueue.empty():
+            self.currentCommand = self.commandQueue.get()
+            self.logger.info(f'Sending command - {self.currentCommand}')
+            self.write(self.currentCommand.request)
 
     def sendG0(self, *args, **kwargs):
         return self._createCommand(CommandG0, *args, **kwargs)
@@ -133,11 +134,9 @@ class CommandConnection(SerialConnection):
         getattr(self, f'finished{command.NAME}').emit(command)
         self.finished.emit(command)
         command.deleteLater()
+        self.currentCommand = None
 
-        if self.commandQueue.empty():
-            self.currentCommand = None
-        else:
-            self.currentCommand = self.commandQueue.get()
+        self._trySendNext()
 
     def _errorOccurred(self, command):
         assert(command == self.currentCommand)
