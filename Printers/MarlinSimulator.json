@@ -1,0 +1,47 @@
+{
+    "version": 3,
+    "displayName": "Marlin Simulator",
+    "connectionMode": "Marlin2",
+    "connection": {
+                      "baudRate": "115200",
+                      "dataBits": "8",
+                      "parity": "No",
+                      "stopBits": "1",
+                      "flowControl": "No"
+                  },
+    "screwType": "CW-M4",
+    "manualProbePoints": [
+        {
+            "name": "1",
+            "fixed": false,
+            "row": 2,
+            "column": 0,
+            "x": 25,
+            "y": 25
+        },
+        {
+            "name": "2",
+            "fixed": false,
+            "row": 0,
+            "column": 0,
+            "x": 25,
+            "y": 175
+        },
+        {
+            "name": "3",
+            "fixed": false,
+            "row": 0,
+            "column": 2,
+            "x": 175,
+            "y": 175
+        },
+        {
+            "name": "4",
+            "fixed": false,
+            "row": 2,
+            "column": 2,
+            "x": 175,
+            "y": 25
+        }
+                         ]
+}
