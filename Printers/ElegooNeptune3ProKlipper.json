@@ -1,0 +1,40 @@
+{
+    "version": 3,
+    "displayName": "Neptune 3 Plus (Klipper)",
+    "connectionMode": "Moonraker",
+    "connection": {},
+    "screwType": "CW-M4",
+    "manualProbePoints": [{
+                              "name": "1",
+                              "fixed": false,
+                              "row": 2,
+                              "column": 0,
+                              "x": 32.5,
+                              "y": 27.5
+                          },
+                          {
+                              "name": "2",
+                              "fixed": false,
+                              "row": 0,
+                              "column": 0,
+                              "x": 32.5,
+                              "y": 197.5
+                          },
+                          {
+                              "name": "3",
+                              "fixed": false,
+                              "row": 0,
+                              "column": 2,
+                              "x": 202.5,
+                              "y": 197.5
+                          },
+                          {
+                              "name": "4",
+                              "fixed": false,
+                              "row": 2,
+                              "column": 2,
+                              "x": 202.5,
+                              "y": 27.5
+                          }
+                         ]
+}
