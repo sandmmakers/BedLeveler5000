@@ -28,6 +28,10 @@ class CommandBase(QtCore.QObject):
         if done:
             self.finished.emit(self)
 
+    @abc.abstractmethod
+    def _processLine(self, line):
+        raise NotImplementedError
+
     @property
     @abc.abstractmethod
     def NAME(self):
