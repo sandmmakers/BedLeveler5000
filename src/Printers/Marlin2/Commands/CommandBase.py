@@ -28,6 +28,11 @@ class CommandBase(QtCore.QObject):
         if done:
             self.finished.emit(self)
 
+    @property
+    @abc.abstractmethod
+    def NAME(self):
+        raise NotImplementedError
+
     @staticmethod
     def isEcho(line):
         return line.startswith('echo:')
