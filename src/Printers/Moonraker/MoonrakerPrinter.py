@@ -132,7 +132,7 @@ class MoonrakerPrinter(CommandPrinter):
         self.errorOccurred.emit(machine.TYPE, machine.id_, machine.context, message)
 
 class MoonrakerMachine(QtCore.QObject):
-    sent = QtCore.Signal(QtCore.QObject, str) # type, id, context, command
+    sent = QtCore.Signal(QtCore.QObject, str) # machine, command
     finished = QtCore.Signal(QtCore.QObject, object) # machine, response
     errorOccurred = QtCore.Signal(QtCore.QObject, str) # machine, message
 
