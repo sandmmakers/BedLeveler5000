@@ -23,6 +23,13 @@ testPoints = [
     #'
     #RECV: 'ok P15 B3'
 
+    #SENT: 'M420 V0'
+    #RECV: 'echo:Invalid mesh.'
+    #RECV: 'echo:Bed Leveling OFF'
+    #RECV: 'echo:Fade Height 10.00
+    #'
+    #RECV: 'ok'
+
     #SENT: 'M420 S1'
     #RECV: 'echo:Bed Leveling ON'
     #RECV: 'echo:Fade Height 10.00

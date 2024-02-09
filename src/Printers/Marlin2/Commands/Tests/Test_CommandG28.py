@@ -55,6 +55,27 @@ testPoints = [
                           'count': {'x': 8000,
                                     'y': 9000,
                                     'z': 2}}),
+    TestPoint(lines = ['echo:busy: processing',
+                       'echo:busy: processing',
+                       'echo:busy: processing',
+                       'echo:busy: processing',
+                       'echo:busy: processing',
+                       'echo:busy: processing',
+                       'echo:busy: processing',
+                       'echo:busy: processing',
+                       'X:157.00 Y:122.00 Z:10.00 E:124.00 Count X:12560 Y:9760 Z:4000',
+                       'echo:Invalid mesh.',
+                       'Error:Failed to enable Bed Leveling',
+                       'echo:Bed Leveling OFF',
+                       'echo:Fade Height 10.00\r',
+                       'ok'],
+              expected = {'x': 157.00,
+                          'y': 122.00,
+                          'z': 10.00,
+                          'e': 124.00,
+                          'count': {'x': 12560,
+                                    'y': 9760,
+                                    'z': 4000}})
     ]
 
 def createCommandG28(testPoint):

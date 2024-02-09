@@ -35,10 +35,18 @@ testPoints = [
     #RECV: 'FromStp: X: 100.000 Y: 100.000 Z: 0.000 E: 124.000'
     #RECV: 'Diff:    X: 0.000 Y: 0.000 Z: 0.000 E: 0.000'
     #RECV: 'ok P15 B3'
-    #
+
     #SENT: 'M114 E'
     #RECV: 'Count E:62000'
     #RECV: 'ok P15 B3'
+
+    #SENT: 'M114 D'
+    #RECV: 'X:157.00 Y:122.00 Z:10.00 E:124.00 Count X:12560 Y:9760 Z:4000'
+    #RECV: 'ok'
+
+    #SENT: 'M114 E'
+    #RECV: 'X:157.00 Y:122.00 Z:10.00 E:124.00 Count X:12560 Y:9760 Z:4000'
+    #RECV: 'ok'
     ]
 
 def createCommandM114(testPoint):

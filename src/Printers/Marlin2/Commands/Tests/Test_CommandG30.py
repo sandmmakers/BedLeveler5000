@@ -33,6 +33,9 @@ testPoints = [
                                                  'z': 2}}}),
 
     #SENT: 'G30 X-42'
+    #RECV: 'ok'
+
+    #SENT: 'G30 X-42'
     #RECV: 'Z Probe Past Bed'
     #RECV: 'ok P15 B3'
 

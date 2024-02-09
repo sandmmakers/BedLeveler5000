@@ -19,6 +19,11 @@ testPoints = [
               expected = {'x': 1.00,
                           'y': 2.00,
                           'z': 3.50}),
+    TestPoint(lines = ['Probe Offset X-40.00 Y-5.00 Z0.00',
+                       'ok'],
+              expected = {'x': -40.0,
+                          'y': -5.00,
+                          'z': 0.00})
 
     #SENT: 'M851 X0'
     #RECV: 'ok P15 B3'
