@@ -49,7 +49,7 @@ class Cell(QtWidgets.QWidget):
 
     @staticmethod
     def fixedString(value):
-        return 'Fixed: ' + 'Yes' if value else 'No'
+        return 'Fixed: ' + ('Yes' if value else 'No')
 
     @staticmethod
     def valueString(name, value):
