@@ -23,7 +23,9 @@ class CommandG28(PositionOkCommand):
 
 
     def _processLine(self, line):
-        if line == 'Taring probe':
+        if line in ['Taring probe',
+                    'Error:Failed to enable Bed Leveling']:
             return False
+
 
         return super()._processLine(line)
