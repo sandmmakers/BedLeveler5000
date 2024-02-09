@@ -42,6 +42,14 @@
             "column": 2,
             "x": 175,
             "y": 25
+        },
+        {
+            "name": "Center",
+            "fixed": true,
+            "row": 1,
+            "column": 1,
+            "x": 100,
+            "y": 100
         }
                          ]
 }
