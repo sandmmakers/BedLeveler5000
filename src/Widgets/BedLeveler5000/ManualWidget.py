@@ -34,6 +34,8 @@ class ManualWidget(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.fixedMap = None
+
         self.__createWidgets()
         self.__layoutWidgets()
         self._updateState()
@@ -102,12 +104,14 @@ class ManualWidget(QtWidgets.QWidget):
     def setPrinter(self, printerInfo):
         self.printerInfo = printerInfo
         self.manualProbeButtonArea.configure(printerInfo)
+        self.fixedMap = {}
 
         # Set reference combo box items
         defaultReference = None
         self.referenceComboBox.clear()
         for point in printerInfo.manualProbePoints:
             self.referenceComboBox.addItem(point.name, point)
+            self.fixedMap[point.name] = point.fixed
             if defaultReference is None and point.fixed:
                 defaultReference = point
         if defaultReference is None:
@@ -161,6 +165,8 @@ class ManualWidget(QtWidgets.QWidget):
                 suffix = ''
             elif raw.name == referenceName:
                 suffix = '(Fixed reference)'
+            elif self.fixedMap[raw.name]:
+                suffix = ''
             elif self.outputComboBox.currentData() == self.Output.DELTA:
                 suffix = f'(Delta: {relative.z:.3f})'
             else:
