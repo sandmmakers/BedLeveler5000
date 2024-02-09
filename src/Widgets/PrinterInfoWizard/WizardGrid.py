@@ -130,13 +130,24 @@ class Grid(QtWidgets.QGroupBox):
         self.cleared.emit()
 
     def getPoints(self):
+        assert self.gridLayout.rowCount() == 3
+        assert self.gridLayout.columnCount() == 3
+
+        orderedPoints = [[2, 0],
+                         [1, 0],
+                         [0, 0],
+                         [0, 1],
+                         [0, 2],
+                         [1, 2],
+                         [2, 2],
+                         [2, 1],
+                         [1, 1]]
         points = []
 
-        for row in range(self.gridLayout.rowCount()):
-            for column in range(self.gridLayout.columnCount()):
-                cell = self.gridLayout.itemAtPosition(row, column).widget()
-                if cell.isSet():
-                    points.append(cell.point)
+        for row, column in orderedPoints:
+            cell = self.gridLayout.itemAtPosition(row, column).widget()
+            if cell.isSet():
+                points.append(cell.point)
 
         return points
 
