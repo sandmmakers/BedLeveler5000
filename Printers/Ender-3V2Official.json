@@ -12,6 +12,14 @@
     "screwType": "CW-M4",
     "manualProbePoints": [
         {
+            "name": "1",
+            "fixed": false,
+            "row": 2,
+            "column": 0,
+            "x": 34,
+            "y": 29
+        },
+        {
             "name": "2",
             "fixed": false,
             "row": 0,
@@ -28,28 +36,20 @@
             "y": 199
         },
         {
-            "name": "Center",
-            "fixed": true,
-            "row": 1,
-            "column": 1,
-            "x": 114.5,
-            "y": 114.0
-        },
-        {
-            "name": "1",
-            "fixed": false,
-            "row": 2,
-            "column": 0,
-            "x": 34,
-            "y": 29
-        },
-        {
             "name": "4",
             "fixed": false,
             "row": 2,
             "column": 2,
             "x": 195.0,
             "y": 29
+        },
+        {
+            "name": "Center",
+            "fixed": true,
+            "row": 1,
+            "column": 1,
+            "x": 114.5,
+            "y": 114.0
         }
     ]
 }
