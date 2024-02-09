@@ -24,6 +24,7 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
         self.setWindowTitle('Configure Grid Point')
         self.xOffset = None
         self.yOffset = None
+        self.originalName = gridPoint.name
         self.existingNames = existingNames
 
         self.__createWidgets(gridPoint)
@@ -124,7 +125,7 @@ class ConfigureGridPointDialog(QtWidgets.QDialog):
         self.timer.stop()
 
     def finish(self):
-        if self.point().name in self.existingNames:
+        if self.point().name != self.originalName and self.point().name in self.existingNames:
             QtWidgets.QMessageBox.warning(self, 'Error', 'Name already in use by another manual probe point.')
         else:
             self.accept()
