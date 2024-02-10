@@ -202,7 +202,7 @@ class ManualWidget(QtWidgets.QWidget):
                 suffix = f'(Adjust: {value}{units}{sign})'
 
             self.log.append(prefix + suffix)
-            self.previousCommand = self.Command.ALL
+        self.previousCommand = self.Command.ALL
 
     @classmethod
     def _relativeDistances(self, probeList, referenceName, direction, clockwiseScrew):
