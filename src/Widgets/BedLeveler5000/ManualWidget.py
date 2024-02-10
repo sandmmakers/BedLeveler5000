@@ -159,16 +159,16 @@ class ManualWidget(QtWidgets.QWidget):
 
         for raw, relative in zip(resultList, relativeDistanceList):
             assert(raw.name == relative.name)
-            prefix = f'Probed {raw.name} ({raw.x}, {raw.y}): {raw.z:.3f} '
+            prefix = f'Probed {raw.name} ({raw.x:5.1f}, {raw.y:5.1f}): {raw.z:6.3f}'
 
             if self.outputComboBox.currentData() == self.Output.NONE:
                 suffix = ''
             elif raw.name == referenceName:
-                suffix = '(Fixed reference)'
+                suffix = ' (Fixed reference)'
             elif self.fixedMap[raw.name]:
                 suffix = ''
             elif self.outputComboBox.currentData() == self.Output.DELTA:
-                suffix = f'(Delta: {relative.z:.3f})'
+                suffix = f' (Delta: {relative.z:6.3f})'
             else:
                 turns = relative.z / self.printerInfo.screwType.pitch
                 positiveTurns = turns > 0
@@ -176,15 +176,15 @@ class ManualWidget(QtWidgets.QWidget):
 
                 if self.outputComboBox.currentData() == self.Output.TURNS:
                     amount = round(turns, 3)
-                    value = f'{amount:0.3f}'
+                    value = f'{amount:5.3f}'
                     units = ' turns'
                 elif self.outputComboBox.currentData() == self.Output.DEGREES:
                     amount = round(360.0 * turns, 2)
-                    value = f'{amount:0.2f}'
+                    value = f'{amount:6.2f}'
                     units = '\u00B0'
                 elif self.outputComboBox.currentData() == self.Output.RADIANS:
-                    amount = round(2*math.pi * turns, 3)
-                    value = f'{amount:0.3f}'
+                    amount = round(2*math.pi * turns, 4)
+                    value = f'{amount:7.4f}'
                     units = f' rad'
                 else:
                     hours = math.trunc(turns)
@@ -199,7 +199,7 @@ class ManualWidget(QtWidgets.QWidget):
                     sign = ' CCW' if positiveTurns else ' CW'
                 else:
                     sign = ' CW' if positiveTurns else ' CCW'
-                suffix = f'(Adjust: {value}{units}{sign})'
+                suffix = f' (Adjust: {value}{units}{sign})'
 
             self.log.append(prefix + suffix)
         self.previousCommand = self.Command.ALL
