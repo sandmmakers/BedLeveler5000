@@ -81,6 +81,13 @@ ${PYTHON_EXE} -m pip install -r "${REQUIREMENTS_TXT}"
 # Static analysis
 pylint --rcfile .pylintrc --errors-only src
 
+# Run unit tests
+(
+    cd "${SRC_DIR}"
+    ${PYTHON_EXE} -m pytest Printers/Marlin2/Commands/Tests
+    ${PYTHON_EXE} -m pytest Widgets/BedLeveler5000/Tests
+)
+
 # Ensure pip cache is empty
 pip cache purge
 
