@@ -12,7 +12,7 @@ on:
 
 env:
   TAG: ${{inputs.TAG}}
-  PYTHON_VERSION: '3.12'
+  PYTHON_VERSION: '3.12.1'
   INSTALL_DIR: Install/BedLeveler5000
 
 jobs:
