@@ -62,21 +62,26 @@ to use **Bed Leveler 5000**.
 4) Launch **BedLeveler5000**, **PrinterInfoWizard**, or **InspectorG-code**
 
 ### MacOS
-1) Download the **BedLeveler5000-vX.X.X-macos-x86_64.tgz** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
-2) Open a terminal
-3) Extract archive
+1) Give the current user permissions to use serial ports
+   ```
+   sudo dseditgroup -o edit -a "$(whoami)" -t user "wheel"
+   ```
+2) Reboot to ensure changes take effect
+3) Download the **BedLeveler5000-vX.X.X-macos-x86_64.tgz** file from the latest release at https://github.com/sandmmakers/BedLeveler5000/releases
+4) Open a terminal
+5) Extract archive
    ```
    tar xvf BedLeveler5000-vX.X.X-macos-x86_64.tgz
    ```
-5) Enter directory
+6) Enter directory
    ```
    cd BedLeveler5000-vX.X.X-macos-x86_64
    ```
-6) Add execute permissions
+7) Add execute permissions
    ```
    chmod +x BedLeveler5000 PrinterInfoWizard InspectorG-code PrinterTester
    ```
-7) Run desired application
+8) Run desired application
     - Bed Leveler 5000
       ```
       ./BedLeveler5000
