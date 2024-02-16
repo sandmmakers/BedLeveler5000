@@ -81,7 +81,11 @@ to use **Bed Leveler 5000**.
    ```
    chmod +x BedLeveler5000 PrinterInfoWizard InspectorG-code PrinterTester
    ```
-8) Run desired application
+8) Disable quarantine as the applications are unsigned
+   ```
+   xattr -d com.apple.quarantine -r .
+   ```
+9) Run desired application
     - Bed Leveler 5000
       ```
       ./BedLeveler5000
