@@ -63,8 +63,8 @@ jobs:
           path: ${{ env.INSTALL_DIR }}
           if-no-files-found: error
 
-  build-macos:
-    name: MacOS
+  build-macos-intel:
+    name: MacOS_Intel
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v4
@@ -79,6 +79,26 @@ jobs:
           ./build_all ${TAG:+--tag "${TAG}"}
       - uses: actions/upload-artifact@v4
         with:
-          name: Artifacts-MacOS
+          name: Artifacts-MacOS-Intel
+          path: ${{ env.INSTALL_DIR }}
+          if-no-files-found: error
+
+  build-macos-m1:
+    name: MacOS_M1
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build all
+        shell: bash
+        run: |
+          ./build_all ${TAG:+--tag "${TAG}"}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts-MacOS-M1
           path: ${{ env.INSTALL_DIR }}
           if-no-files-found: error

@@ -23,7 +23,8 @@ jobs:
       TAG: ${{ github.ref_name }}
       WINDOWS_STEM: BedLeveler5000-${{ github.ref_name }}-windows-x86_64
       LINUX_STEM: BedLeveler5000-${{ github.ref_name }}-linux-x86_64
-      MACOS_STEM: BedLeveler5000-${{ github.ref_name }}-macos-x86_64
+      MACOS_INTEL_STEM: BedLeveler5000-${{ github.ref_name }}-macos-x86_64
+      MACOS_M1_STEM: BedLeveler5000-${{ github.ref_name }}-macos-m1
       HASHES_FILE: BedLeveler5000-${{ github.ref_name }}-SHA-256.txt
       ASC_FILE: BedLeveler5000-${{ github.ref_name }}-SHA-256.txt.asc
     steps:
@@ -34,14 +35,17 @@ jobs:
           7z a ${WINDOWS_STEM}.7z ${WINDOWS_STEM}
           mv Artifacts-Linux ${LINUX_STEM}
           tar zcvf ${LINUX_STEM}.tgz ${LINUX_STEM}
-          mv Artifacts-MacOS ${MACOS_STEM}
-          tar zcvf ${MACOS_STEM}.tgz ${MACOS_STEM}
+          mv Artifacts-MacOS-Intel ${MACOS_INTEL_STEM}
+          tar zcvf ${MACOS_INTEL_STEM}.tgz ${MACOS_INTEL_STEM}
+          mv Artifacts-MacOS-M1 ${MACOS_M1_STEM}
+          tar zcvf ${MACOS_M1_STEM}.tgz ${MACOS_M1_STEM}
       - name: Create hashes file
         run: |
           sha256sum --binary \
               ${WINDOWS_STEM}.7z \
               ${LINUX_STEM}.tgz \
-              ${MACOS_STEM}.tgz \
+              ${MACOS_INTEL_STEM}.tgz \
+              ${MACOS_M1_STEM}.tgz \
               > ${HASHES_FILE}
           cat ${HASHES_FILE}
       - name: Sign hashes file
@@ -69,6 +73,7 @@ jobs:
               --generate-notes \
               ${WINDOWS_STEM}.7z \
               ${LINUX_STEM}.tgz \
-              ${MACOS_STEM}.tgz \
+              ${MACOS_INTEL_STEM}.tgz \
+              ${MACOS_M1_STEM}.tgz \
               ${HASHES_FILE} \
               ${ASC_FILE}
