@@ -1,0 +1,55 @@
+{
+    "version": 3,
+    "displayName": "Artillery Sidewinder X3 Pro",
+    "connectionMode": "Marlin2",
+    "connection": {
+        "baudRate": "115200",
+        "dataBits": "8",
+        "parity": "No",
+        "stopBits": "1",
+        "flowControl": "No"
+    },
+    "screwType": "CW-M4",
+    "manualProbePoints": [
+        {
+            "name": "Front left",
+            "fixed": false,
+            "row": 2,
+            "column": 0,
+            "x": 53.0,
+            "y": 53.0
+        },
+        {
+            "name": "Back left",
+            "fixed": false,
+            "row": 0,
+            "column": 0,
+            "x": 53.0,
+            "y": 195.0
+        },
+        {
+            "name": "Back right",
+            "fixed": false,
+            "row": 0,
+            "column": 2,
+            "x": 193.0,
+            "y": 195.0
+        },
+        {
+            "name": "Front right",
+            "fixed": false,
+            "row": 2,
+            "column": 2,
+            "x": 193.0,
+            "y": 53.0
+        },
+        {
+            "name": "Center",
+            "fixed": true,
+            "row": 1,
+            "column": 1,
+            "x": 120.0,
+            "y": 120.0
+        }
+    ]
+}
