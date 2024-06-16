@@ -298,8 +298,9 @@ class CommandPrinter(Printer):
         assert self._probeXOffset is not None
         assert self._probeYOffset is not None
 
-        probeX = x - self._probeXOffset
-        probeY = y - self._probeYOffset
+        # Determine nozzle coordinates
+        nozzleX = x + self._probeXOffset
+        nozzleY = y + self._probeYOffset
 
-        return self._travelBoundsMinX <= x <= self._travelBoundsMaxX and \
-               self._travelBoundsMinY <= y <= self._travelBoundsMaxY
+        return self._travelBoundsMinX <= nozzleX <= self._travelBoundsMaxX and \
+               self._travelBoundsMinY <= nozzleY <= self._travelBoundsMaxY
