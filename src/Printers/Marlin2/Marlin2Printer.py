@@ -3,7 +3,7 @@ from ..CommandPrinter import CommandType
 from ..CommandPrinter import GetTemperaturesResult
 from ..CommandPrinter import GetProbeOffsetsResult
 from ..CommandPrinter import GetCurrentPositionResult
-from ..CommandPrinter import GetTravelBoundsResult
+from ..CommandPrinter import GetBoundsResult
 from ..CommandPrinter import GetMeshCoordinatesResult
 from ..CommandPrinter import ProbeResult
 from .CommandConnection import CommandConnection
@@ -305,7 +305,7 @@ class GetCurrentPositionMachine(Marlin2Machine):
 
 class GetTravelBoundsMachine(Marlin2Machine):
     TYPE = CommandType.GET_TRAVEL_BOUNDS
-    gotTravelBounds = QtCore.Signal(str, dict, GetTravelBoundsResult)
+    gotTravelBounds = QtCore.Signal(str, dict, GetBoundsResult)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -315,12 +315,12 @@ class GetTravelBoundsMachine(Marlin2Machine):
         self.setCommand(self.commandConnection.sendM211())
 
     def _enterDone(self, reply):
-        self.finish(self.gotTravelBounds, GetTravelBoundsResult(minX = reply['minX'],
-                                                                maxX = reply['maxX'],
-                                                                minY = reply['minY'],
-                                                                maxY = reply['maxY'],
-                                                                minZ = reply['minZ'],
-                                                                maxZ = reply['maxZ']))
+        self.finish(self.gotTravelBounds, GetBoundsResult(minX = reply['minX'],
+                                                          maxX = reply['maxX'],
+                                                          minY = reply['minY'],
+                                                          maxY = reply['maxY'],
+                                                          minZ = reply['minZ'],
+                                                          maxZ = reply['maxZ']))
 
 class GetMeshCoordinatesMachine(Marlin2Machine):
     TYPE = CommandType.GET_MESH_COORDINATES

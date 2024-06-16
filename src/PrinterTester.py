@@ -175,6 +175,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.probeXYSpeedSpinBox.setMaximum(1000)
         self.probeXYSpeedSpinBox.setValue(120)
 
+        # Probe offsets
+        self.probeOffsetsButton = QtWidgets.QPushButton('ProbeOffsets')
+        self.probeOffsetsButton.clicked.connect(self.startProbeOffsets)
+
+        # Travel bounds
+        self.travelBoundsButton = QtWidgets.QPushButton('TravelBounds')
+        self.travelBoundsButton.clicked.connect(self.startTravelBounds)
+
+        # Probe bounds
+        self.probeBoundsButton = QtWidgets.QPushButton('ProbeBounds')
+        self.probeBoundsButton.clicked.connect(self.startProbeBounds)
+
         self.logTextEdit = QtWidgets.QTextEdit()
         font = self.logTextEdit.font()
         font.setFamily('Courier')
@@ -255,8 +267,15 @@ class MainWindow(QtWidgets.QMainWindow):
         probeSettingsLayout.addWidget(self.setProbeXYSpeedButton)
         probeSettingsLayout.addWidget(self.probeXYSpeedSpinBox)
 
+        boundsSettingsLayout = QtWidgets.QHBoxLayout()
+        boundsSettingsLayout.addWidget(self.probeOffsetsButton)
+        boundsSettingsLayout.addWidget(self.travelBoundsButton)
+        boundsSettingsLayout.addWidget(self.probeBoundsButton)
+        boundsSettingsLayout.addStretch()
+
         settingsLayout = QtWidgets.QVBoxLayout()
         settingsLayout.addLayout(probeSettingsLayout)
+        settingsLayout.addLayout(boundsSettingsLayout)
         self.settingsGroupBox.setLayout(settingsLayout)
 
         clearLayout = QtWidgets.QHBoxLayout()
@@ -433,6 +452,26 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.autoClearCheckBox.isChecked():
             self.logTextEdit.clear()
         self.logTextEdit.append(f'Probe XY speed: {self.printer.probeXYSpeed()}')
+
+    def startProbeOffsets(self):
+        if self.autoClearCheckBox.isChecked():
+            self.logTextEdit.clear()
+        self.logTextEdit.append(f'Probe offsets: {self.printer.probeOffsets()}')
+
+    def startTravelBounds(self):
+        if self.autoClearCheckBox.isChecked():
+            self.logTextEdit.clear()
+        self.logTextEdit.append(f'Travel bounds: {self.printer.travelBounds()}')
+
+    def startProbeBounds(self):
+        if self.autoClearCheckBox.isChecked():
+            self.logTextEdit.clear()
+
+        try:
+            result = f'Probe bounds: {self.printer.probeBounds()}'
+        except RuntimeError as exception:
+            result = str(exception)
+        self.logTextEdit.append(result)
 
     def startProbe(self):
         self.start('probe',

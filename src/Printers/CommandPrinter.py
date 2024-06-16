@@ -47,7 +47,7 @@ class GetCurrentPositionResult(NamedTuple):
     z: float
     e: float
 
-class GetTravelBoundsResult(NamedTuple):
+class GetBoundsResult(NamedTuple):
     minX: float
     maxX: float
     minY: float
@@ -76,7 +76,7 @@ class CommandPrinter(Printer):
     gotTemperatures = QtCore.Signal(str, dict, GetTemperaturesResult) # id, context, result
     gotProbeOffsets = QtCore.Signal(str, dict, GetProbeOffsetsResult) # id, context, result
     gotCurrentPosition = QtCore.Signal(str, dict, GetCurrentPositionResult) # id, context, result
-    gotTravelBounds = QtCore.Signal(str, dict, GetTravelBoundsResult) # id, context, result
+    gotTravelBounds = QtCore.Signal(str, dict, GetBoundsResult) # id, context, result
     gotMeshCoordinates = QtCore.Signal(str, dict, GetMeshCoordinatesResult) # id, context, result
     bedTemperatureSet = QtCore.Signal(str, dict) # id, context
     nozzleTemperatureSet = QtCore.Signal(str, dict) # id, context
@@ -127,6 +127,36 @@ class CommandPrinter(Printer):
 
     def probeXYSpeed(self):
         return self._probeXYSpeed
+
+    def probeOffsets(self):
+        return self._probeXOffset, self._probeYOffset, self._probeZOffset
+
+    def travelBounds(self):
+        return GetBoundsResult(minX = self._travelBoundsMinX,
+                               maxX = self._travelBoundsMaxX,
+                               minY = self._travelBoundsMinY,
+                               maxY = self._travelBoundsMaxY,
+                               minZ = self._travelBoundsMinZ,
+                               maxZ = self._travelBoundsMaxZ)
+
+    def probeBounds(self):
+        if self._probeXOffset is None or \
+           self._probeYOffset is None or \
+           self._probeZOffset is None or \
+           self._travelBoundsMinX is None or \
+           self._travelBoundsMaxX is None or \
+           self._travelBoundsMinY is None or \
+           self._travelBoundsMaxY is None or \
+           self._travelBoundsMinZ is None or \
+           self._travelBoundsMaxZ is None:
+           raise RuntimeError('At least one probe offset or travel bounds value is None.')
+
+        return GetBoundsResult(minX = self._travelBoundsMinX + self._probeXOffset,
+                               maxX = self._travelBoundsMaxX + self._probeXOffset,
+                               minY = self._travelBoundsMinY + self._probeYOffset,
+                               maxY = self._travelBoundsMaxY + self._probeYOffset,
+                               minZ = self._travelBoundsMinZ + self._probeZOffset,
+                               maxZ = self._travelBoundsMaxZ + self._probeZOffset)
 
     @loggedFunction
     def setProbeSampleCount(self, count):
@@ -292,12 +322,7 @@ class CommandPrinter(Printer):
 
     @loggedFunction(level='debug')
     def isProbeable(self, *, x, y):
-        assert self._probeXOffset is not None
-        assert self._probeYOffset is not None
+        bounds = self.probeBounds()
 
-        # Determine nozzle coordinates
-        nozzleX = x + self._probeXOffset
-        nozzleY = y + self._probeYOffset
-
-        return self._travelBoundsMinX <= nozzleX <= self._travelBoundsMaxX and \
-               self._travelBoundsMinY <= nozzleY <= self._travelBoundsMaxY
+        return bounds.minX <= x <= bounds.maxX and \
+               bounds.minY <= y <= bounds.maxY

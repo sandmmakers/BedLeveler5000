@@ -3,7 +3,7 @@ from Printers.CommandPrinter import CommandType
 from Printers.CommandPrinter import GetTemperaturesResult
 from Printers.CommandPrinter import GetProbeOffsetsResult
 from Printers.CommandPrinter import GetCurrentPositionResult
-from Printers.CommandPrinter import GetTravelBoundsResult
+from Printers.CommandPrinter import GetBoundsResult
 from Printers.CommandPrinter import GetMeshCoordinatesResult
 from Printers.CommandPrinter import ProbeResult
 from Common.Common import LOG_ALL
@@ -477,7 +477,7 @@ class GetCurrentPositionMachine(MoonrakerMachine):
 
 class GetTravelBoundsMachine(MoonrakerMachine):
     TYPE = CommandType.GET_TRAVEL_BOUNDS
-    gotTravelBounds = QtCore.Signal(str, dict, GetTravelBoundsResult)
+    gotTravelBounds = QtCore.Signal(str, dict, GetBoundsResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -490,12 +490,12 @@ class GetTravelBoundsMachine(MoonrakerMachine):
         config = self._getConfig(replyJson)
         minX, maxX, minY, maxY, minZ, maxZ = self._getConfigSectionTravelBounds(config)
         self.finish(self.gotTravelBounds,
-                    GetTravelBoundsResult(minX = minX,
-                                          maxX = maxX,
-                                          minY = minY,
-                                          maxY = maxY,
-                                          minZ = minZ,
-                                          maxZ = maxZ))
+                    GetBoundsResult(minX = minX,
+                                    maxX = maxX,
+                                    minY = minY,
+                                    maxY = maxY,
+                                    minZ = minZ,
+                                    maxZ = maxZ))
 
 class GetMeshCoordinatesMachine(MoonrakerMachine):
     TYPE = CommandType.GET_MESH_COORDINATES
