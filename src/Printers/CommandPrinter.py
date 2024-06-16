@@ -119,16 +119,13 @@ class CommandPrinter(Printer):
         raise NotImplementedError
 
     # Settings
-    @loggedFunction
-    def getProbeSampleCount(self):
+    def probeSampleCount(self):
         return self._probeSampleCount
 
-    @loggedFunction
-    def getProbeZHeight(self):
+    def probeZHeight(self):
         return self._probeZHeight
 
-    @loggedFunction
-    def getProbeXYSpeed(self):
+    def probeXYSpeed(self):
         return self._probeXYSpeed
 
     @loggedFunction

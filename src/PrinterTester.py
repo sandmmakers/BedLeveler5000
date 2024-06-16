@@ -101,9 +101,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.getDefaultProbeXYSpeedButton = QtWidgets.QPushButton('GetDefaultProbeXYSpeed')
         self.getDefaultProbeXYSpeedButton.clicked.connect(self.startGetDefaultProbeXYSpeed)
 
-        # Get probe sample count
-        self.getProbeSampleCountButton = QtWidgets.QPushButton('GetProbeSampleCount')
-        self.getProbeSampleCountButton.clicked.connect(self.startGetProbeSampleCount)
+        # Probe sample count
+        self.probeSampleCountButton = QtWidgets.QPushButton('ProbeSampleCount')
+        self.probeSampleCountButton.clicked.connect(self.startProbeSampleCount)
 
         # Set probe sample count
         self.setProbeSampleCountButton = QtWidgets.QPushButton('SetProbeSampleCount')
@@ -111,9 +111,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.probeSampleCountSpinBox = QtWidgets.QSpinBox()
         self.probeSampleCountSpinBox.setValue(1)
 
-        # Get probe Z height
-        self.getProbeZHeightButton = QtWidgets.QPushButton('GetProbeZHeight')
-        self.getProbeZHeightButton.clicked.connect(self.startGetProbeZHeight)
+        # Probe Z height
+        self.probeZHeightButton = QtWidgets.QPushButton('ProbeZHeight')
+        self.probeZHeightButton.clicked.connect(self.startProbeZHeight)
 
         # Set probe Z height
         self.setProbeZHeightButton = QtWidgets.QPushButton('SetProbeZHeight')
@@ -121,9 +121,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.probeZHeightSpinBox = QtWidgets.QDoubleSpinBox()
         self.probeZHeightSpinBox.setValue(15)
 
-        # Get probe XY speed
-        self.getProbeXYSpeedButton = QtWidgets.QPushButton('GetProbeXYSpeed')
-        self.getProbeXYSpeedButton.clicked.connect(self.startGetProbeXYSpeed)
+        # Probe XY speed
+        self.probeXYSpeedButton = QtWidgets.QPushButton('ProbeXYSpeed')
+        self.probeXYSpeedButton.clicked.connect(self.startProbeXYSpeed)
 
         # Set probe XY speed
         self.setProbeXYSpeedButton = QtWidgets.QPushButton('SetProbeXYSpeed')
@@ -207,13 +207,13 @@ class MainWindow(QtWidgets.QMainWindow):
         probeDefaultsLayout.addStretch()
 
         probeSettingsLayout = QtWidgets.QHBoxLayout()
-        probeSettingsLayout.addWidget(self.getProbeSampleCountButton)
+        probeSettingsLayout.addWidget(self.probeSampleCountButton)
         probeSettingsLayout.addWidget(self.setProbeSampleCountButton)
         probeSettingsLayout.addWidget(self.probeSampleCountSpinBox)
-        probeSettingsLayout.addWidget(self.getProbeZHeightButton)
+        probeSettingsLayout.addWidget(self.probeZHeightButton)
         probeSettingsLayout.addWidget(self.setProbeZHeightButton)
         probeSettingsLayout.addWidget(self.probeZHeightSpinBox)
-        probeSettingsLayout.addWidget(self.getProbeXYSpeedButton)
+        probeSettingsLayout.addWidget(self.probeXYSpeedButton)
         probeSettingsLayout.addWidget(self.setProbeXYSpeedButton)
         probeSettingsLayout.addWidget(self.probeXYSpeedSpinBox)
 
@@ -409,20 +409,20 @@ class MainWindow(QtWidgets.QMainWindow):
     def startGetDefaultProbeXYSpeed(self):
         self.start('getDefaultProbeXYSpeed')
 
-    def startGetProbeSampleCount(self):
+    def startProbeSampleCount(self):
         if self.autoClearCheckBox.isChecked():
             self.logTextEdit.clear()
-        self.logTextEdit.append(f'Probe sample count: {self.printer.getProbeSampleCount()}')
+        self.logTextEdit.append(f'Probe sample count: {self.printer.probeSampleCount()}')
 
-    def startGetProbeZHeight(self):
+    def startProbeZHeight(self):
         if self.autoClearCheckBox.isChecked():
             self.logTextEdit.clear()
-        self.logTextEdit.append(f'Probe Z-height: {self.printer.getProbeZHeight()}')
+        self.logTextEdit.append(f'Probe Z-height: {self.printer.probeZHeight()}')
 
-    def startGetProbeXYSpeed(self):
+    def startProbeXYSpeed(self):
         if self.autoClearCheckBox.isChecked():
             self.logTextEdit.clear()
-        self.logTextEdit.append(f'Probe XY speed: {self.printer.getProbeXYSpeed()}')
+        self.logTextEdit.append(f'Probe XY speed: {self.printer.probeXYSpeed()}')
 
     def startProbe(self):
         self.start('probe',
