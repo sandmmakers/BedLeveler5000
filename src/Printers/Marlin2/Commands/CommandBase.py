@@ -80,12 +80,12 @@ class CommandBase(QtCore.QObject):
 
     @staticmethod
     def parseBedResponseLine(line):
-        tokens = CommandBase.tokenize(line, 7)
+        tokens = CommandBase.tokenize(line, 7, replace=':')
 
         if tokens[0] != 'Bed' or \
-           tokens[1] != 'X:' or  \
-           tokens[3] != 'Y:' or  \
-           tokens[5] != 'Z:':
+           tokens[1] != 'X' or  \
+           tokens[3] != 'Y' or  \
+           tokens[5] != 'Z':
             raise GCodeError(f'Unable to parse response: [{line}].')
 
         try:
