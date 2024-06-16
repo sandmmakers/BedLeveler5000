@@ -70,7 +70,7 @@ class CommandConnection(SerialConnection):
         command.finished.connect(self._finished)
         command.errorOccurred.connect(self._errorOccurred)
 
-        self.logger.debug(f'Queing command - {command}')
+        self.logger.debug(f'Queuing command - {command}')
         self.commandQueue.put(command)
         self._trySendNext()
         return command
