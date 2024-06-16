@@ -43,9 +43,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.printerConnectWidget.connectRequested.connect(self.connectToPrinter)
         self.printerConnectWidget.disconnectRequested.connect(self.disconnectFromPrinter)
 
-        # Controls group box
-        self.controlsGroupBox = QtWidgets.QGroupBox('Controls')
-        self.controlsGroupBox.setEnabled(False)
+        # Commands group box
+        self.commandsGroupBox = QtWidgets.QGroupBox('Commands')
+        self.commandsGroupBox.setEnabled(False)
 
         # Init
         self.initButton = QtWidgets.QPushButton('Init')
@@ -101,37 +101,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.getDefaultProbeXYSpeedButton = QtWidgets.QPushButton('GetDefaultProbeXYSpeed')
         self.getDefaultProbeXYSpeedButton.clicked.connect(self.startGetDefaultProbeXYSpeed)
 
-        # Probe sample count
-        self.probeSampleCountButton = QtWidgets.QPushButton('ProbeSampleCount')
-        self.probeSampleCountButton.clicked.connect(self.startProbeSampleCount)
-
-        # Set probe sample count
-        self.setProbeSampleCountButton = QtWidgets.QPushButton('SetProbeSampleCount')
-        self.setProbeSampleCountButton.clicked.connect(lambda: self.printer.setProbeSampleCount(self.probeSampleCountSpinBox.value()))
-        self.probeSampleCountSpinBox = QtWidgets.QSpinBox()
-        self.probeSampleCountSpinBox.setValue(1)
-
-        # Probe Z height
-        self.probeZHeightButton = QtWidgets.QPushButton('ProbeZHeight')
-        self.probeZHeightButton.clicked.connect(self.startProbeZHeight)
-
-        # Set probe Z height
-        self.setProbeZHeightButton = QtWidgets.QPushButton('SetProbeZHeight')
-        self.setProbeZHeightButton.clicked.connect(lambda: self.printer.setProbeZHeight(self.probeZHeightSpinBox.value()))
-        self.probeZHeightSpinBox = QtWidgets.QDoubleSpinBox()
-        self.probeZHeightSpinBox.setValue(15)
-
-        # Probe XY speed
-        self.probeXYSpeedButton = QtWidgets.QPushButton('ProbeXYSpeed')
-        self.probeXYSpeedButton.clicked.connect(self.startProbeXYSpeed)
-
-        # Set probe XY speed
-        self.setProbeXYSpeedButton = QtWidgets.QPushButton('SetProbeXYSpeed')
-        self.setProbeXYSpeedButton.clicked.connect(lambda: self.printer.setProbeXYSpeed(self.probeXYSpeedSpinBox.value()))
-        self.probeXYSpeedSpinBox = QtWidgets.QDoubleSpinBox()
-        self.probeXYSpeedSpinBox.setMaximum(1000)
-        self.probeXYSpeedSpinBox.setValue(120)
-
         # Probe
         self.probeButton = QtWidgets.QPushButton("Probe")
         self.probeButton.clicked.connect(self.startProbe)
@@ -171,6 +140,41 @@ class MainWindow(QtWidgets.QMainWindow):
         self.moveWaitCheckBox.setChecked(True)
         self.moveRelativeCheckBox = QtWidgets.QCheckBox('Relative')
 
+        # Settings group box
+        self.settingsGroupBox = QtWidgets.QGroupBox('Settings')
+        self.settingsGroupBox.setEnabled(False)
+
+        # Probe sample count
+        self.probeSampleCountButton = QtWidgets.QPushButton('ProbeSampleCount')
+        self.probeSampleCountButton.clicked.connect(self.startProbeSampleCount)
+
+        # Set probe sample count
+        self.setProbeSampleCountButton = QtWidgets.QPushButton('SetProbeSampleCount')
+        self.setProbeSampleCountButton.clicked.connect(lambda: self.printer.setProbeSampleCount(self.probeSampleCountSpinBox.value()))
+        self.probeSampleCountSpinBox = QtWidgets.QSpinBox()
+        self.probeSampleCountSpinBox.setValue(1)
+
+        # Probe Z height
+        self.probeZHeightButton = QtWidgets.QPushButton('ProbeZHeight')
+        self.probeZHeightButton.clicked.connect(self.startProbeZHeight)
+
+        # Set probe Z height
+        self.setProbeZHeightButton = QtWidgets.QPushButton('SetProbeZHeight')
+        self.setProbeZHeightButton.clicked.connect(lambda: self.printer.setProbeZHeight(self.probeZHeightSpinBox.value()))
+        self.probeZHeightSpinBox = QtWidgets.QDoubleSpinBox()
+        self.probeZHeightSpinBox.setValue(15)
+
+        # Probe XY speed
+        self.probeXYSpeedButton = QtWidgets.QPushButton('ProbeXYSpeed')
+        self.probeXYSpeedButton.clicked.connect(self.startProbeXYSpeed)
+
+        # Set probe XY speed
+        self.setProbeXYSpeedButton = QtWidgets.QPushButton('SetProbeXYSpeed')
+        self.setProbeXYSpeedButton.clicked.connect(lambda: self.printer.setProbeXYSpeed(self.probeXYSpeedSpinBox.value()))
+        self.probeXYSpeedSpinBox = QtWidgets.QDoubleSpinBox()
+        self.probeXYSpeedSpinBox.setMaximum(1000)
+        self.probeXYSpeedSpinBox.setValue(120)
+
         self.logTextEdit = QtWidgets.QTextEdit()
         font = self.logTextEdit.font()
         font.setFamily('Courier')
@@ -206,17 +210,6 @@ class MainWindow(QtWidgets.QMainWindow):
         probeDefaultsLayout.addWidget(self.getDefaultProbeXYSpeedButton)
         probeDefaultsLayout.addStretch()
 
-        probeSettingsLayout = QtWidgets.QHBoxLayout()
-        probeSettingsLayout.addWidget(self.probeSampleCountButton)
-        probeSettingsLayout.addWidget(self.setProbeSampleCountButton)
-        probeSettingsLayout.addWidget(self.probeSampleCountSpinBox)
-        probeSettingsLayout.addWidget(self.probeZHeightButton)
-        probeSettingsLayout.addWidget(self.setProbeZHeightButton)
-        probeSettingsLayout.addWidget(self.probeZHeightSpinBox)
-        probeSettingsLayout.addWidget(self.probeXYSpeedButton)
-        probeSettingsLayout.addWidget(self.setProbeXYSpeedButton)
-        probeSettingsLayout.addWidget(self.probeXYSpeedSpinBox)
-
         probeLayout = QtWidgets.QHBoxLayout()
         probeLayout.addWidget(self.probeButton)
         probeLayout.addWidget(QtWidgets.QLabel('X:'))
@@ -243,14 +236,28 @@ class MainWindow(QtWidgets.QMainWindow):
         moveLayout.addWidget(self.moveRelativeCheckBox)
         moveLayout.addStretch()
 
-        controlsLayout = QtWidgets.QVBoxLayout()
-        controlsLayout.addLayout(simpleLayout)
-        controlsLayout.addLayout(temperatureLayout)
-        controlsLayout.addLayout(probeDefaultsLayout)
-        controlsLayout.addLayout(probeSettingsLayout)
-        controlsLayout.addLayout(probeLayout)
-        controlsLayout.addLayout(moveLayout)
-        self.controlsGroupBox.setLayout(controlsLayout)
+        commandsLayout = QtWidgets.QVBoxLayout()
+        commandsLayout.addLayout(simpleLayout)
+        commandsLayout.addLayout(temperatureLayout)
+        commandsLayout.addLayout(probeDefaultsLayout)
+        commandsLayout.addLayout(probeLayout)
+        commandsLayout.addLayout(moveLayout)
+        self.commandsGroupBox.setLayout(commandsLayout)
+
+        probeSettingsLayout = QtWidgets.QHBoxLayout()
+        probeSettingsLayout.addWidget(self.probeSampleCountButton)
+        probeSettingsLayout.addWidget(self.setProbeSampleCountButton)
+        probeSettingsLayout.addWidget(self.probeSampleCountSpinBox)
+        probeSettingsLayout.addWidget(self.probeZHeightButton)
+        probeSettingsLayout.addWidget(self.setProbeZHeightButton)
+        probeSettingsLayout.addWidget(self.probeZHeightSpinBox)
+        probeSettingsLayout.addWidget(self.probeXYSpeedButton)
+        probeSettingsLayout.addWidget(self.setProbeXYSpeedButton)
+        probeSettingsLayout.addWidget(self.probeXYSpeedSpinBox)
+
+        settingsLayout = QtWidgets.QVBoxLayout()
+        settingsLayout.addLayout(probeSettingsLayout)
+        self.settingsGroupBox.setLayout(settingsLayout)
 
         clearLayout = QtWidgets.QHBoxLayout()
         clearLayout.addStretch()
@@ -260,7 +267,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.printerConnectWidget)
-        layout.addWidget(self.controlsGroupBox)
+        layout.addWidget(self.commandsGroupBox)
+        layout.addWidget(self.settingsGroupBox)
         layout.addWidget(self.logTextEdit)
         layout.addLayout(clearLayout)
 
@@ -327,10 +335,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.printer.open(**kwargs)
 
         self.printerConnectWidget.setConnected()
-        self.controlsGroupBox.setEnabled(True)
+        self.commandsGroupBox.setEnabled(True)
+        self.settingsGroupBox.setEnabled(True)
 
     def disconnectFromPrinter(self):
-        self.controlsGroupBox.setEnabled(False)
+        self.settingsGroupBox.setEnabled(False)
+        self.commandsGroupBox.setEnabled(False)
         self.printerConnectWidget.setDisconnected()
         self.printer.close()
 
