@@ -104,7 +104,7 @@ class SerialConnection(QtCore.QObject):
             try:
                 lineEndIndex = index - 1 if index > 0 and self.readBuffer[index - 1] == b'\r' else index
                 line = str(self.readBuffer[:lineEndIndex], 'ascii') # TODO: Verify the correct encoding
-            except:
+            except UnicodeDecodeError:
                 self.logger.warn(f'Detected bad bytes: {self.readBuffer.data().hex()}.')
                 self.readBuffer.clear()
                 continue
