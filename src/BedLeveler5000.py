@@ -261,7 +261,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def _processInitResults(self, id_, context):
         for point in self.printerInfo.manualProbePoints:
             if not self.printer.isProbeable(x=point.x, y=point.y):
-                self._error(f'Manual probe point ({point.x}, {point.y}) is outside the probeable area.'
+                probeBounds = self.printer.probeBounds()
+                probeArea = f'({probeBounds.minX}, {probeBounds.minY}), ({probeBounds.maxX}, {probeBounds.maxY})'
+
+                self._error(f'Manual probe point ({point.x}, {point.y}) is outside the probeable area of {probeArea}.'
                                  f' Either the probe point coordinates are wrong or the printer\'s X or Y'
                                  f' axis bounds are set incorrectly.')
                 return
@@ -278,7 +281,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         for corner in corners:
             if not self.printer.isProbeable(x=corner.x, y=corner.y):
-                self._error(f'Mesh corner point ({corner.x}, {corner.y}) is outside the probeable area.'
+                probeBounds = self.printer.probeBounds()
+                probeArea = f'({probeBounds.minX}, {probeBounds.minY}), ({probeBounds.maxX}, {probeBounds.maxY})'
+
+                self._error(f'Mesh corner point ({corner.x}, {corner.y}) is outside the probeable area of {probeArea}.'
                                  f' Either the mesh is misconfigured or the printer\'s X or Y'
                                  f' axis bounds are set incorrectly.')
                 return
