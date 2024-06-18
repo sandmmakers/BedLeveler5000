@@ -83,6 +83,8 @@ class PrinterConnectWidget(QtWidgets.QWidget):
             fieldType = self.FieldType.PORT
         elif self.connectionMode() == ConnectionMode.MOONRAKER:
             fieldType = self.FieldType.HOST
+        else:
+            raise RuntimeError('Invalid connection mode')
 
         self.stackedLabelWidget.setCurrentIndex(fieldType)
 
@@ -151,6 +153,8 @@ class PrinterConnectWidget(QtWidgets.QWidget):
                 specific = self.stackedWidget.widget(printerIndex).getCurrentText()
             elif printerDetails.printerInfo.connectionMode == ConnectionMode.MOONRAKER:
                 specific = self.stackedWidget.widget(printerIndex).text()
+            else:
+                raise RuntimeError('Invalid connection mode')
 
             previousMap[printerDetails.path] = (printerDetails, specific)
 

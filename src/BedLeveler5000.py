@@ -169,6 +169,8 @@ class MainWindow(QtWidgets.QMainWindow):
         elif self.printerConnectWidget.connectionMode() == ConnectionMode.MOONRAKER:
             self.printer = MoonrakerPrinter(self.printerConnectWidget.printerInfo(), parent=self)
             kwargs = {'host': self.printerConnectWidget.host()}
+        else:
+            raise RuntimeError('Invalid connection mode')
 
         # Make connections
         self.printerQtConnections.append(self.printer.errorOccurred.connect(self.reportPrinterError))
