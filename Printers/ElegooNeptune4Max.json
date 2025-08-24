@@ -9,48 +9,48 @@
                               "fixed": false,
                               "row": 2,
                               "column": 0,
-                              "x": 30.0,
-                              "y": 30.0
+                              "x": 37.5,
+                              "y": 37.5
                           },
                           {
                               "name": "2",
                               "fixed": false,
                               "row": 1,
                               "column": 0,
-                              "x": 30.0,
-                              "y": 210.0
+                              "x": 37.5,
+                              "y": 215.0
                           },
                           {
                               "name": "3",
                               "fixed": false,
                               "row": 0,
                               "column": 0,
-                              "x": 30.0,
-                              "y": 385.0
+                              "x": 37.5,
+                              "y": 392.5
                           },
                           {
                               "name": "4",
                               "fixed": false,
                               "row": 0,
                               "column": 2,
-                              "x": 385.0,
-                              "y": 385.0
+                              "x": 392.5,
+                              "y": 392.5
                           },
                           {
                               "name": "5",
                               "fixed": false,
                               "row": 1,
                               "column": 2,
-                              "x": 385.0,
-                              "y": 210.0
+                              "x": 392.5,
+                              "y": 215.0
                           },
                           {
                               "name": "6",
                               "fixed": false,
                               "row": 2,
                               "column": 2,
-                              "x": 385.0,
-                              "y": 30.0
+                              "x": 392.5,
+                              "y": 37.5
                           },
                           {
                               "name": "H",
