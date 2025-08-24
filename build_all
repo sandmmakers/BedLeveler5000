@@ -47,6 +47,11 @@ usage() {
     exit 0
 }
 
+error() {
+    >&2 echo $1
+    exit 1
+}
+
 TAG=""
 while [[ $# -gt 0 ]]; do
   case $1 in
