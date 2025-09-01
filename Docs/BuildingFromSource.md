@@ -10,25 +10,26 @@
 5) Clone the repository
    ```
    git clone https://github.com/sandmmakers/BedLeveler5000.git
-   git submodule update --init --recursive 
+   git -C BedLeveler5000 submodule update --init --recursive 
    ```
 6) Enter the repository
    ```
    cd BedLeveler5000
    ```
-7) (Optional) Create a virtual environment
-   ```
-   py -m venv venv
-   ```
-8) Activate the virtual environment
-   ```
-   source venv/Scripts/activate
-   ```
-9) Install prerequisites
-   ```
-   pip3 install -r requirements.txt
-   ```
-10) Build the binary package
+7) (Optional) Setup a development environment
+   1) Create a virtual environment
+      ```
+      py -m venv venv
+      ```
+   2) Activate the virtual environment
+      ```
+      source venv/Scripts/activate
+      ```
+   3) Install prerequisites
+      ```
+      pip3 install -r Buildsystem/requirements.txt
+      ```
+8) Build the binary package
    ```
    ./build_all
    ```
@@ -91,13 +92,26 @@
 4) Clone the repository
    ```
    git clone https://github.com/sandmmakers/BedLeveler5000.git
-   git submodule update --init --recursive
+   git -C BedLeveler5000 submodule update --init --recursive 
    ```
 5) Enter the repository
    ```
    cd BedLeveler5000
    ```
-6) Build the binary package
+6) (Optional) Setup a development environment
+   1) Create a virtual environment
+      ```
+      python3 -m venv venv
+      ```
+   2) Activate the virtual environment
+      ```
+      source venv/bin/activate
+      ```
+   3) Install prerequisites
+      ```
+      pip3 install -r Buildsystem/requirements.txt
+      ```
+7) Build the binary package
    ```
    ./build_all
    ```
