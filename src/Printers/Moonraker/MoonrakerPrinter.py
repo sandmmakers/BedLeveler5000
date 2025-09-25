@@ -272,23 +272,44 @@ class MoonrakerMachine(QtCore.QObject):
         return cls._getField(replyJson, configPath)
 
     @classmethod
-    def _getConfigSection(cls, config, sectionName, *, allowMissing=False):
-        section = config.get(sectionName)
+    def _getConfigSection(cls, config, sectionName, *, allowMissing=False, named=False):
+        if named:
+            section = None
+            for key in config.keys():
+                tokens = key.split(maxsplit=1)
+                if tokens[0] != sectionName:
+                    continue
+
+                # Currently allow multiple extra tokens
+                if len(tokens) == 0:
+                    raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, unnamed \'{sectionName}\' section found in \'printer.cfg\'.')
+
+                # Currently only a single named section is supported
+                if section is not None:
+                    raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, currently multiple \'{sectionName}\' sections in \'printer.cfg\' is unsupported.')
+
+                section = cls.ConfigSection(key, config[key])
+        else:
+            section = config.get(sectionName)
+            if section is not None:
+                section = cls.ConfigSection(sectionName, section)
         if section is None:
             if allowMissing:
                 return None
             else:
                 raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'{sectionName}\' section not found in \'printer.cfg\'.')
-        return cls.ConfigSection(sectionName, section)
+        return section
 
     @classmethod
     def _getConfigSectionProbeLike(cls, config):
         section = cls._getConfigSection(config, 'bltouch', allowMissing=True)
         if section is None:
-            section = cls._getConfigSection(config, 'probe', allowMissing=True)
+            section = cls._getConfigSection(config, 'probe_eddy_current', allowMissing=True, named=True)
+            if section is None:
+                section = cls._getConfigSection(config, 'probe', allowMissing=True)
 
         if section is None:
-            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'bltouch\' nor \'probe\' section not found in \'printer.cfg\'.')
+            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, no probe-like found (\'bltouch\', \'probe_eddy_current\', or \'probe\') section found in \'printer.cfg\'.')
         return section
 
     @classmethod
