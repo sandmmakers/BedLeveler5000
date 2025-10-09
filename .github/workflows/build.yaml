@@ -9,6 +9,7 @@ on:
       TAG:
         required: false
         type: string
+  workflow_dispatch:
 
 env:
   TAG: ${{inputs.TAG}}
