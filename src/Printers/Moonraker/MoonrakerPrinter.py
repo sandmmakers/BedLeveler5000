@@ -306,10 +306,12 @@ class MoonrakerMachine(QtCore.QObject):
         if section is None:
             section = cls._getConfigSection(config, 'probe_eddy_current', allowMissing=True, named=True)
             if section is None:
-                section = cls._getConfigSection(config, 'probe', allowMissing=True)
+                section = cls._getConfigSection(config, 'probe_eddy_ng', allowMissing=True, named=True)
+                if section is None:
+                    section = cls._getConfigSection(config, 'probe', allowMissing=True)
 
         if section is None:
-            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, no probe-like found (\'bltouch\', \'probe_eddy_current\', or \'probe\') section found in \'printer.cfg\'.')
+            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, no probe-like found (\'bltouch\', \'probe_eddy_current\', \'probe_eddy_ng\', or \'probe\') section found in \'printer.cfg\'.')
         return section
 
     @classmethod
@@ -327,7 +329,7 @@ class MoonrakerMachine(QtCore.QObject):
     def _getConfigSectionProbeOffsets(cls, probe):
         return (cls._getConfigSectionValue(probe, 'x_offset', float, default=0.0),
                 cls._getConfigSectionValue(probe, 'y_offset', float, default=0.0),
-                cls._getConfigSectionValue(probe, 'z_offset', float))
+                cls._getConfigSectionValue(probe, 'z_offset', float, default=0.0))
 
     @classmethod
     def _getConfigSectionTravelBounds(cls, config):
