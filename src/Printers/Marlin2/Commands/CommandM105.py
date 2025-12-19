@@ -14,14 +14,16 @@ class CommandM105(CommandBase):
         super().__init__(self.NAME + rPart + tPart)
 
     def _processLine(self, line):
-        # Line 0: 'ok T:<FLOAT> /<FLOAT> B:<FLOAT> /<FLOAT> @:<FLOAT> B@:<FLOAT>'
-        #          |  |         |        |         |        |         +----------- Bed power
-        #          |  |         |        |         |        +--------------------- Tool power
-        #          |  |         |        |         +------------------------------ Bed temp (desired)
-        #          |  |         |        +---------------------------------------- Bed temp (actual)
-        #          |  |         +------------------------------------------------- Tool temp (desired)
-        #          |  +----------------------------------------------------------- Tool temp (actual)
-        #          +-------------------------------------------------------------- ok
+        # Line 0: 'ok T:<FLOAT> /<FLOAT> B:<FLOAT> /<FLOAT> @:<FLOAT> B@:<FLOAT> FAN0@:<FLOAT> FAN1@:<FLOAT>'
+        #          |  |         |        |         |        |         |           |            +----------- Fan speed
+        #          |  |         |        |         |        |         |           +------------------------ Fan speed
+        #          |  |         |        |         |        |         +------------------------------------ Bed power
+        #          |  |         |        |         |        +---------------------------------------------- Tool power
+        #          |  |         |        |         +------------------------------------------------------- Bed temp (desired)
+        #          |  |         |        +----------------------------------------------------------------- Bed temp (actual)
+        #          |  |         +-------------------------------------------------------------------------- Tool temp (desired)
+        #          |  +------------------------------------------------------------------------------------ Tool temp (actual)
+        #          +--------------------------------------------------------------------------------------- ok
 
         if self.isMetadata(line) or self.isAutoReport(line):
             return False
@@ -78,6 +80,9 @@ class CommandM105(CommandBase):
                     index += 2
 
                 elif tokens[index] == 'A':
+                    index += 2
+
+                elif tokens[index].startswith('FAN'):
                     index += 2
 
                 else:
