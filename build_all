@@ -95,8 +95,9 @@ pip cache purge
 
 # Build and install Pyinstaller
 mkdir -p "${BUILD_DIR}/Pyinstaller"
-cp "${PYINSTALLER_DIR}/setup.cfg" "${BUILD_DIR}/Pyinstaller"
-cp "${PYINSTALLER_DIR}/setup.py" "${BUILD_DIR}/Pyinstaller"
+cp "${PYINSTALLER_DIR}/pyproject.toml" "${BUILD_DIR}/Pyinstaller"
+cp "${PYINSTALLER_DIR}/hatch_build.py" "${BUILD_DIR}/Pyinstaller"
+cp "${PYINSTALLER_DIR}/README.rst" "${BUILD_DIR}/Pyinstaller"
 cp -r "${PYINSTALLER_DIR}/bootloader" "${BUILD_DIR}/Pyinstaller"
 cp -r "${PYINSTALLER_DIR}/PyInstaller" "${BUILD_DIR}/Pyinstaller"
 cp -r "${PYINSTALLER_DIR}/scripts" "${BUILD_DIR}/Pyinstaller"
