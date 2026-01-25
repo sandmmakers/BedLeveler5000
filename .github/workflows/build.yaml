@@ -21,7 +21,7 @@ jobs:
     name: Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - uses: actions/setup-python@v5
@@ -43,7 +43,7 @@ jobs:
     env:
       DISPLAY: ':99.0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - uses: actions/setup-python@v5
@@ -68,7 +68,7 @@ jobs:
     name: MacOS_Intel
     runs-on: macos-13
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - uses: actions/setup-python@v5
@@ -88,7 +88,7 @@ jobs:
     name: MacOS_M1
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - uses: actions/setup-python@v5
