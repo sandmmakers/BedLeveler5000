@@ -7,6 +7,7 @@ from Printers.CommandPrinter import GetBoundsResult
 from Printers.CommandPrinter import GetMeshCoordinatesResult
 from Printers.CommandPrinter import ProbeResult
 from Common.Common import LOG_ALL
+from Common.Optional import StrOptional
 
 from PySide6 import QtCore
 from PySide6 import QtNetwork
@@ -150,7 +151,7 @@ class MoonrakerMachine(QtCore.QObject):
         self.host = host
         self.id_ = id_
         self.context = context
-        self.error = None
+        self.error = StrOptional()
         self.setTransition(None)
         self.reply = None
 
@@ -195,7 +196,7 @@ class MoonrakerMachine(QtCore.QObject):
         # Check for protocol error
         if 'error' in replyJson and 'message' in replyJson['error']:
             message = replyJson['error']['message']
-            self.error = message
+            self.error = StrOptional(message)
             logging.error(f'Error {replyJson}')
             self.errorOccurred.emit(self, message)
             self.finished.emit(self, message)
@@ -217,7 +218,7 @@ class MoonrakerMachine(QtCore.QObject):
                 self._transition(replyJson['result'])
             except ValueError as exception:
                 message = str(exception)
-                self.error = message
+                self.error = StrOptional(message)
                 logging.error(message)
                 self.errorOccurred.emit(self, message)
                 self.finished.emit(self, message)
@@ -347,7 +348,7 @@ class MoonrakerMachine(QtCore.QObject):
 
 class InitMachine(MoonrakerMachine):
     TYPE = CommandType.INIT
-    inited = QtCore.Signal(str, dict)
+    inited = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -392,7 +393,7 @@ class InitMachine(MoonrakerMachine):
 
 class HomeMachine(MoonrakerMachine):
     TYPE = CommandType.HOME
-    homed = QtCore.Signal(str, dict)
+    homed = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, x, y, z, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -419,7 +420,7 @@ class HomeMachine(MoonrakerMachine):
 
 class GetTemperaturesMachine(MoonrakerMachine):
     TYPE = CommandType.GET_TEMPERATURES
-    gotTemperatures = QtCore.Signal(str, dict, GetTemperaturesResult)
+    gotTemperatures = QtCore.Signal(str, object, GetTemperaturesResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -442,7 +443,7 @@ class GetTemperaturesMachine(MoonrakerMachine):
 
 class GetProbeOffsetsMachine(MoonrakerMachine):
     TYPE = CommandType.GET_PROBE_OFFSETS
-    gotProbeOffsets = QtCore.Signal(str, dict, GetProbeOffsetsResult)
+    gotProbeOffsets = QtCore.Signal(str, object, GetProbeOffsetsResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -465,7 +466,7 @@ class GetProbeOffsetsMachine(MoonrakerMachine):
 
 class GetCurrentPositionMachine(MoonrakerMachine):
     TYPE = CommandType.GET_CURRENT_POSITION
-    gotCurrentPosition = QtCore.Signal(str, dict, GetCurrentPositionResult)
+    gotCurrentPosition = QtCore.Signal(str, object, GetCurrentPositionResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -500,7 +501,7 @@ class GetCurrentPositionMachine(MoonrakerMachine):
 
 class GetTravelBoundsMachine(MoonrakerMachine):
     TYPE = CommandType.GET_TRAVEL_BOUNDS
-    gotTravelBounds = QtCore.Signal(str, dict, GetBoundsResult)
+    gotTravelBounds = QtCore.Signal(str, object, GetBoundsResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -522,7 +523,7 @@ class GetTravelBoundsMachine(MoonrakerMachine):
 
 class GetMeshCoordinatesMachine(MoonrakerMachine):
     TYPE = CommandType.GET_MESH_COORDINATES
-    gotMeshCoordinates = QtCore.Signal(str, dict, GetMeshCoordinatesResult)
+    gotMeshCoordinates = QtCore.Signal(str, object, GetMeshCoordinatesResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -563,7 +564,7 @@ class GetMeshCoordinatesMachine(MoonrakerMachine):
 
 class SetBedTemperatureMachine(MoonrakerMachine):
     TYPE = CommandType.SET_BED_TEMPERATURE
-    bedTemperatureSet = QtCore.Signal(str, dict)
+    bedTemperatureSet = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, temp, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent=None)
@@ -579,7 +580,7 @@ class SetBedTemperatureMachine(MoonrakerMachine):
 
 class SetNozzleTemperatureMachine(MoonrakerMachine):
     TYPE = CommandType.SET_NOZZLE_TEMPERATURE
-    nozzleTemperatureSet = QtCore.Signal(str, dict)
+    nozzleTemperatureSet = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, temp, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -595,7 +596,7 @@ class SetNozzleTemperatureMachine(MoonrakerMachine):
 
 class GetDefaultProbeSampleCountMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_SAMPLE_COUNT
-    gotDefaultProbeSampleCount = QtCore.Signal(str, dict, int)
+    gotDefaultProbeSampleCount = QtCore.Signal(str, object, int)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -613,7 +614,7 @@ class GetDefaultProbeSampleCountMachine(MoonrakerMachine):
 
 class GetDefaultProbeZHeightMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_Z_HEIGHT
-    gotDefaultProbeZHeight = QtCore.Signal(str, dict, float)
+    gotDefaultProbeZHeight = QtCore.Signal(str, object, float)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -631,7 +632,7 @@ class GetDefaultProbeZHeightMachine(MoonrakerMachine):
 
 class GetDefaultProbeXYSpeedMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_XY_SPEED
-    gotDefaultProbeXYSpeed = QtCore.Signal(str, dict, float)
+    gotDefaultProbeXYSpeed = QtCore.Signal(str, object, float)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -649,7 +650,7 @@ class GetDefaultProbeXYSpeedMachine(MoonrakerMachine):
 
 class ProbeMachine(MoonrakerMachine):
     TYPE = CommandType.PROBE
-    probed = QtCore.Signal(str, dict, ProbeResult)
+    probed = QtCore.Signal(str, object, ProbeResult)
 
     def __init__(self, networkAccessManager, host, id_, context, x, y, sampleCount, xySpeed, probeHeight, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -711,7 +712,7 @@ class ProbeMachine(MoonrakerMachine):
 
 class MoveMachine(MoonrakerMachine):
     TYPE = CommandType.MOVE
-    moved = QtCore.Signal(str, dict)
+    moved = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, x, y, z, e, f, wait, relative, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
