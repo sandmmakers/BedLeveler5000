@@ -7,6 +7,7 @@ from ..CommandPrinter import GetBoundsResult
 from ..CommandPrinter import GetMeshCoordinatesResult
 from ..CommandPrinter import ProbeResult
 from .CommandConnection import CommandConnection
+from Common.Optional import StrOptional
 
 from PySide6 import QtCore
 from PySide6 import QtNetwork
@@ -143,7 +144,7 @@ class Marlin2Machine(QtCore.QObject):
 
         self.id_ = id_
         self.context = context
-        self.error = None
+        self.error = StrOptional(None)
         self.setTransition(None)
         self.command = None
 
@@ -166,7 +167,7 @@ class Marlin2Machine(QtCore.QObject):
 
         # Handle errors
         if error is not None:
-            self.error = error
+            self.error = StrOptional(error)
             self.errorOccurred.emit(self, error)
         else: # Move to next state
             self._transition(command.result)
@@ -184,9 +185,9 @@ class Marlin2Machine(QtCore.QObject):
         self.finished.emit(self, result)
 
     def reportError(self, message):
-        self.error = message
+        self.error = StrOptional(message)
         self.errorOccurred.emit(self, message)
-        self.finished.emit(self, message)
+        self.finished.emit(self, None)
 
     @staticmethod
     def stringIsInteger(value):
@@ -199,7 +200,7 @@ class Marlin2Machine(QtCore.QObject):
 
 class InitMachine(Marlin2Machine):
     TYPE = CommandType.INIT
-    inited = QtCore.Signal(str, dict)
+    inited = QtCore.Signal(str, object)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -236,7 +237,7 @@ class InitMachine(Marlin2Machine):
 
 class HomeMachine(Marlin2Machine):
     TYPE = CommandType.HOME
-    homed = QtCore.Signal(str, dict)
+    homed = QtCore.Signal(str, object)
 
     def __init__(self, commandConnection, id_, context, x, y, z, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -253,7 +254,7 @@ class HomeMachine(Marlin2Machine):
 
 class GetTemperaturesMachine(Marlin2Machine):
     TYPE = CommandType.GET_TEMPERATURES
-    gotTemperatures = QtCore.Signal(str, dict, GetTemperaturesResult)
+    gotTemperatures = QtCore.Signal(str, object, GetTemperaturesResult)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -272,7 +273,7 @@ class GetTemperaturesMachine(Marlin2Machine):
 
 class GetProbeOffsetsMachine(Marlin2Machine):
     TYPE = CommandType.GET_PROBE_OFFSETS
-    gotProbeOffsets = QtCore.Signal(str, dict, GetProbeOffsetsResult)
+    gotProbeOffsets = QtCore.Signal(str, object, GetProbeOffsetsResult)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -288,7 +289,7 @@ class GetProbeOffsetsMachine(Marlin2Machine):
 
 class GetCurrentPositionMachine(Marlin2Machine):
     TYPE = CommandType.GET_CURRENT_POSITION
-    gotCurrentPosition = QtCore.Signal(str, dict, GetCurrentPositionResult)
+    gotCurrentPosition = QtCore.Signal(str, object, GetCurrentPositionResult)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -305,7 +306,7 @@ class GetCurrentPositionMachine(Marlin2Machine):
 
 class GetTravelBoundsMachine(Marlin2Machine):
     TYPE = CommandType.GET_TRAVEL_BOUNDS
-    gotTravelBounds = QtCore.Signal(str, dict, GetBoundsResult)
+    gotTravelBounds = QtCore.Signal(str, object, GetBoundsResult)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -324,7 +325,7 @@ class GetTravelBoundsMachine(Marlin2Machine):
 
 class GetMeshCoordinatesMachine(Marlin2Machine):
     TYPE = CommandType.GET_MESH_COORDINATES
-    gotMeshCoordinates = QtCore.Signal(str, dict, GetMeshCoordinatesResult)
+    gotMeshCoordinates = QtCore.Signal(str, object, GetMeshCoordinatesResult)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -430,7 +431,7 @@ class GetMeshCoordinatesMachine(Marlin2Machine):
 
 class SetBedTemperatureMachine(Marlin2Machine):
     TYPE = CommandType.SET_BED_TEMPERATURE
-    bedTemperatureSet = QtCore.Signal(str, dict)
+    bedTemperatureSet = QtCore.Signal(str, object)
 
     def __init__(self, commandConnection, id_, context, temp, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -445,7 +446,7 @@ class SetBedTemperatureMachine(Marlin2Machine):
 
 class SetNozzleTemperatureMachine(Marlin2Machine):
     TYPE = CommandType.SET_NOZZLE_TEMPERATURE
-    nozzleTemperatureSet = QtCore.Signal(str, dict)
+    nozzleTemperatureSet = QtCore.Signal(str, object)
 
     def __init__(self, commandConnection, id_, context, temp, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -460,7 +461,7 @@ class SetNozzleTemperatureMachine(Marlin2Machine):
 
 class GetDefaultProbeSampleCountMachine(Marlin2Machine):
     TYPE = CommandType.GET_DEFAULT_PROBE_SAMPLE_COUNT
-    gotDefaultProbeSampleCount = QtCore.Signal(str, dict, int)
+    gotDefaultProbeSampleCount = QtCore.Signal(str, object, int)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -470,7 +471,7 @@ class GetDefaultProbeSampleCountMachine(Marlin2Machine):
 
 class GetDefaultProbeZHeightMachine(Marlin2Machine):
     TYPE = CommandType.GET_DEFAULT_PROBE_Z_HEIGHT
-    gotDefaultProbeZHeight = QtCore.Signal(str, dict, float)
+    gotDefaultProbeZHeight = QtCore.Signal(str, object, float)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -480,7 +481,7 @@ class GetDefaultProbeZHeightMachine(Marlin2Machine):
 
 class GetDefaultProbeXYSpeedMachine(Marlin2Machine):
     TYPE = CommandType.GET_DEFAULT_PROBE_XY_SPEED
-    gotDefaultProbeXYSpeed = QtCore.Signal(str, dict, float)
+    gotDefaultProbeXYSpeed = QtCore.Signal(str, object, float)
 
     def __init__(self, commandConnection, id_, context, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -492,7 +493,7 @@ class ProbeMachine(Marlin2Machine):
     """ Probe samples are averaged. """
 
     TYPE = CommandType.PROBE
-    probed = QtCore.Signal(str, dict, ProbeResult)
+    probed = QtCore.Signal(str, object, ProbeResult)
 
     def __init__(self, commandConnection, id_, context, x, y, sampleCount, xySpeed, probeHeight, parent=None):
         super().__init__(commandConnection, id_, context, parent)
@@ -542,7 +543,7 @@ class ProbeMachine(Marlin2Machine):
 
 class MoveMachine(Marlin2Machine):
     TYPE = CommandType.MOVE
-    moved = QtCore.Signal(str, dict)
+    moved = QtCore.Signal(str, object)
 
     def __init__(self, commandConnection, id_, context, x, y, z, e, f, wait, relative, parent=None):
         super().__init__(commandConnection, id_, context, parent)
