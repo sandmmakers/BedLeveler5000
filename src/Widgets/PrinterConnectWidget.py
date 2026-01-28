@@ -18,6 +18,11 @@ class PrinterConnectWidget(QtWidgets.QWidget):
     disconnectRequested = QtCore.Signal(PrinterInfo._PrinterInfo, str)
     homeRequested = QtCore.Signal()
 
+    class State(enum.Enum):
+        DISCONNECTED = 0
+        BUSY = 1
+        CONNECTED = 2
+
     class PrinterDetails(NamedTuple):
         path: pathlib.Path
         printerInfo: PrinterInfo._PrinterInfo
@@ -31,12 +36,12 @@ class PrinterConnectWidget(QtWidgets.QWidget):
 
         self.hasHomeButton = hasHomeButton
 
-        self.__createWidgets()
+        self.__createWidgets(hasHomeButton)
         self.__layoutWidgets()
 
         self.setDisconnected()
 
-    def __createWidgets(self):
+    def __createWidgets(self, hasHomeButton):
         self.printerComboBox = QtWidgets.QComboBox()
         self.printerComboBox.currentIndexChanged.connect(self._switchPrinter)
 
@@ -50,10 +55,13 @@ class PrinterConnectWidget(QtWidgets.QWidget):
 
         # Connections are made in the setConnected and setDisconnected functions
         self.connectButton = QtWidgets.QPushButton('UNSET')
+        self.connectButton.clicked.connect(self._requestConnectionChange)
 
         if self.hasHomeButton:
             self.homeButton = QtWidgets.QPushButton('Home')
             self.homeButton.clicked.connect(self.homeRequested)
+        else:
+            self.homeButton = None
 
     def __layoutWidgets(self):
         layout = QtWidgets.QHBoxLayout()
@@ -70,63 +78,65 @@ class PrinterConnectWidget(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-    def _switchPrinter(self):
-        self._updateFieldTypeLabel()
-        self.stackedWidget.setCurrentIndex(self.printerComboBox.currentIndex())
-        self.printerChanged.emit(self.printerComboBox.currentData().printerInfo)
+    def _updateWidgets(self):
+        if self.printerCount() == 0:
+            self.printerComboBox.setEnabled(False)
+            self.connectButton.setEnabled(False)
+            if self.hasHomeButton:
+                self.homeButton.setEnabled(False)
+            return
 
-    def printerCount(self):
-        return self.printerComboBox.count()
-
-    def _updateFieldTypeLabel(self):
+        # Update the field type label
         if self.connectionMode() == ConnectionMode.MARLIN_2:
             fieldType = self.FieldType.PORT
         elif self.connectionMode() == ConnectionMode.MOONRAKER:
             fieldType = self.FieldType.HOST
         else:
             raise RuntimeError('Invalid connection mode')
-
         self.stackedLabelWidget.setCurrentIndex(fieldType)
 
-    def setBusy(self):
-        self.printerComboBox.setEnabled(False)
-        self.stackedWidget.setEnabled(False)
+        # Update stacked widget
+        self.stackedWidget.setCurrentIndex(self.printerComboBox.currentIndex())
 
-        try:
-            self.connectButton.clicked.disconnect()
-        except RuntimeError:
-            pass
-        self.connectButton.setText('Disconnect')
-        self.connectButton.clicked.connect(lambda: self._requestConnectionChange(False))
+        # Update printer combo box
+        self.printerComboBox.setEnabled(self._state == self.State.DISCONNECTED)
 
+        # Update stacked widget
+        self.stackedWidget.setEnabled(self._state == self.State.DISCONNECTED)
+
+        # Update connect button
+        self.connectButton.setText('Connect' if self._state == self.State.DISCONNECTED else 'Disconnect')
+        self.connectButton.setEnabled(
+        self.stackedWidget.currentWidget().count() > 0 if self.connectionMode() == ConnectionMode.MARLIN_2 else len(self.stackedWidget.currentWidget().text()) > 0)
+
+        # Update home button
         if self.hasHomeButton:
-            self.homeButton.setEnabled(False)
+            self.homeButton.setEnabled(self.hasHomeButton and self._state == self.State.CONNECTED)
+
+    def _switchPrinter(self):
+        self._updateWidgets()
+        self.printerChanged.emit(self.printerComboBox.currentData().printerInfo)
+
+    def printerCount(self):
+        return self.printerComboBox.count()
+
+    def setBusy(self):
+        self._state = self.State.BUSY
+        self._updateWidgets()
 
     def setConnected(self):
-        self.setBusy()
-
-        if self.hasHomeButton:
-            self.homeButton.setEnabled(True)
+        self._state = self.State.CONNECTED
+        self._updateWidgets()
 
     def setDisconnected(self):
-        self.printerComboBox.setEnabled(True)
-        self.stackedWidget.setEnabled(True)
+        self._state = self.State.DISCONNECTED
+        self._updateWidgets()
 
-        try:
-            self.connectButton.clicked.disconnect()
-        except RuntimeError:
-            pass
-        self.connectButton.setText('Connect')
-        self.connectButton.clicked.connect(lambda: self._requestConnectionChange(True))
-
-        if self.hasHomeButton:
-            self.homeButton.setEnabled(False)
-
-    def _requestConnectionChange(self, connect):
+    def _requestConnectionChange(self):
         printerInfo = self.printerComboBox.currentData().printerInfo
         specific = self._currentSpecific()
 
-        if connect:
+        if self._state == self.State.DISCONNECTED:
             self.connectRequested.emit(printerInfo, specific)
         else:
             self.disconnectRequested.emit(printerInfo, specific)
@@ -137,8 +147,8 @@ class PrinterConnectWidget(QtWidgets.QWidget):
         # Verify argument requirements
         assert (desiredPrinter is not None) or (desiredPort is None and desiredHost is None)
 
-        # Verify there are no connected printers
-        assert(self.printerComboBox.isEnabled())
+        # Verify state is disconnected
+        assert(self._state == self.State.DISCONNECTED)
 
         # Disable printer changed signal
         self.printerComboBox.blockSignals(True)
@@ -179,7 +189,8 @@ class PrinterConnectWidget(QtWidgets.QWidget):
             if printerInfo.connectionMode == ConnectionMode.MARLIN_2:
                 self.stackedWidget.addWidget(QtWidgets.QComboBox())
             elif printerInfo.connectionMode == ConnectionMode.MOONRAKER:
-                self.stackedWidget.addWidget(QtWidgets.QLineEdit())
+                index = self.stackedWidget.addWidget(QtWidgets.QLineEdit())
+                self.stackedWidget.widget(index).textChanged.connect(self._updateWidgets)
             else:
                 raise IOError('Detected an unsupported printer type.')
 
@@ -226,8 +237,8 @@ class PrinterConnectWidget(QtWidgets.QWidget):
             elif printerInfo.connectionMode == ConnectionMode.MOONRAKER and desiredHost is not None:
                 self._setCurrentSpecific(desiredHost)
 
-        # Update field type label
-        self._updateFieldTypeLabel()
+        # Update the widgets
+        self._updateWidgets()
 
         # Restore printer changed signal
         self.printerComboBox.blockSignals(False)
@@ -249,6 +260,7 @@ class PrinterConnectWidget(QtWidgets.QWidget):
                 for serialPortInfo in serialPortInfoList:
                     comboBox.addItem(serialPortInfo.portName())
                 comboBox.setCurrentText(previous)
+        self._updateWidgets()
 
     def printerInfo(self, index=None):
         index = self.printerComboBox.currentIndex() if index is None else index
