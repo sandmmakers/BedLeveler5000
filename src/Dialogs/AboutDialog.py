@@ -5,6 +5,8 @@ from PySide6 import QtGui
 from PySide6 import QtWidgets
 
 class AboutDialog(QtWidgets.QDialog):
+    URL = 'sandmmakers.com/projects/BedLeveler5000'
+
     def __init__(self, description, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -14,40 +16,45 @@ class AboutDialog(QtWidgets.QDialog):
         titleFontMetrics = QtGui.QFontMetrics(titleFont)
         titleRect = titleFontMetrics.boundingRect(qApp.applicationName())
 
-        applicationNamePixmap = QtGui.QPixmap(1.2 * titleRect.width(), 3 * titleRect.height())
-        applicationNamePixmap.fill(QtCore.Qt.white)
-        painter = QtGui.QPainter(applicationNamePixmap)
-        painter.setFont(titleFont)
-        painter.drawText(QtCore.QPoint(0.1 * titleRect.width(), 1.5 * titleRect.height()), qApp.applicationName())
-        painter.setPen(QtGui.QPen(QtCore.Qt.gray, 10))
-        painter.drawLine(0.1 * titleRect.width(),
-                         0.85 * applicationNamePixmap.height(),
-                         1.1 * titleRect.width(),
-                         0.85 * applicationNamePixmap.height())
-        painter.end()
+        titleLabel = QtWidgets.QLabel(qApp.applicationName())
+        titleLabel.setAlignment(QtCore.Qt.AlignCenter)
+        titleLabel.setFont(titleFont)
+        titleLabel.setStyleSheet('QLabel { background-color: white; }')
 
-        self.titleLabel = QtWidgets.QLabel()
-        self.titleLabel.setPixmap(applicationNamePixmap)
+        lineWidget = QtWidgets.QWidget()
+        lineWidget.setFixedHeight(0.15 * titleRect.height())
+        lineWidget.setStyleSheet('QWidget { background-color: gray; }')
 
-        url = 'sandmmakers.com/projects/BedLeveler5000'
-        self.textLabel = QtWidgets.QLabel(f'{description}<br>' \
-                                          '<br><br>' \
-                                          'By: <b>S&M Makers, LLC</b><br>' \
-                                          f'<a href=\'{url}\'>{url}</a><br>' \
-                                          f'Version: {qApp.applicationVersion()}<br>' \
-                                          'Copyright: 2023<br>' \
-                                          'License: GPLv3')
-        self.textLabel.setAlignment(QtCore.Qt.AlignCenter)
-        self.textLabel.setStyleSheet('QLabel { background-color : white; }')
+        descriptionText = f'{description}<br>' \
+                          '<br><br>' \
+                          'By: <b>S&M Makers, LLC</b><br>' \
+                          f'<a href=\'{self.URL}\'>{self.URL}</a><br>' \
+                          f'Version: {qApp.applicationVersion()}<br>' \
+                          'Copyright: 2023<br>' \
+                          'License: GPLv3'
+
+        descriptionLabel = QtWidgets.QLabel(descriptionText)
+        descriptionLabel.setAlignment(QtCore.Qt.AlignCenter)
+        descriptionLabel.setStyleSheet('QLabel { background-color : white; }')
+
+        textLayout = QtWidgets.QVBoxLayout()
+        textLayout.addSpacing(0.5 * titleRect.height())
+        textLayout.addWidget(titleLabel)
+        textLayout.addSpacing(0.5 * titleRect.height())
+        textLayout.addWidget(lineWidget)
+        textLayout.addSpacing(0.25 * titleRect.height())
+        textLayout.addWidget(descriptionLabel)
+        textLayout.setContentsMargins(0.1 * titleRect.width(),
+                                      0,
+                                      0.1 * titleRect.width(),
+                                      0)
+
+        textWidget = QtWidgets.QWidget()
+        textWidget.setStyleSheet('QWidget { background-color: white; }')
+        textWidget.setLayout(textLayout)
 
         self.closeButton = QtWidgets.QPushButton('Close')
         self.closeButton.clicked.connect(lambda : self.accept())
-
-        textLayout = QtWidgets.QVBoxLayout()
-        textLayout.addWidget(self.titleLabel)
-        textLayout.addWidget(self.textLabel, stretch=100)
-        textLayout.setSpacing(0)
-        textLayout.setContentsMargins(0, 0, 0, 0)
 
         buttonLayout = QtWidgets.QHBoxLayout()
         buttonLayout.addStretch()
@@ -55,7 +62,7 @@ class AboutDialog(QtWidgets.QDialog):
         buttonLayout.addStretch()
 
         layout = QtWidgets.QVBoxLayout()
-        layout.addLayout(textLayout)
+        layout.addWidget(textWidget)
         layout.addLayout(buttonLayout)
         layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         layout.setContentsMargins(0, 0, 0, qApp.style().pixelMetric(QtWidgets.QStyle.PM_LayoutBottomMargin))
@@ -68,14 +75,29 @@ if __name__ == '__main__':
 
     app = QtWidgets.QApplication(sys.argv)
     QtCore.QCoreApplication.setApplicationName('AboutDialog TestApp')
-    QtCore.QCoreApplication.setApplicationVersion('1.0')
+    QtCore.QCoreApplication.setApplicationVersion('6d5cf3257da1fc9c88862563ecc09062a54ef7fb-dirty')
 
-    def test():
+    def shortTest():
         dialog = AboutDialog('Description')
         dialog.exec()
 
-    testButton = QtWidgets.QPushButton('Test')
-    testButton.clicked.connect(test)
+    def longTest():
+        dialog = AboutDialog('A utility aiding in FDM printer bed leveling.')
+        dialog.exec()
 
-    testButton.show()
+    shortTestButton = QtWidgets.QPushButton('Short test')
+    shortTestButton.clicked.connect(shortTest)
+
+    longTestButton = QtWidgets.QPushButton('Long test')
+    longTestButton.clicked.connect(longTest)
+
+    layout = QtWidgets.QHBoxLayout()
+    layout.addWidget(shortTestButton)
+    layout.addStretch()
+    layout.addWidget(longTestButton)
+
+    widget = QtWidgets.QWidget()
+    widget.setLayout(layout)
+
+    widget.show()
     sys.exit(app.exec())
