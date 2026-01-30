@@ -221,7 +221,7 @@ class MoonrakerMachine(QtCore.QObject):
                 self.error = StrOptional(message)
                 logging.error(message)
                 self.errorOccurred.emit(self, message)
-                self.finished.emit(self, message)
+                self.finished.emit(self, None)
 
     def finish(self, signal, result=None):
         if result is None:
