@@ -44,12 +44,12 @@ class TemperatureControlsWidget(QtWidgets.QWidget):
 
     def __layoutWidgets(self):
         groupBoxLayout = QtWidgets.QGridLayout()
-        groupBoxLayout.addWidget(QtWidgets.QLabel('Desired Bed Temp (\x00\xB0C):'), 0, 0)
+        groupBoxLayout.addWidget(QtWidgets.QLabel('Desired Bed Temp (\u00B0C):'), 0, 0)
         groupBoxLayout.addWidget(self.bedTempSpinBox, 0, 1)
         groupBoxLayout.addWidget(QtWidgets.QLabel('State:'), 0, 2)
         groupBoxLayout.addWidget(self.bedHeaterOnButton, 0, 3)
         groupBoxLayout.addWidget(self.bedHeaterOffButton, 0, 4)
-        groupBoxLayout.addWidget(QtWidgets.QLabel(f'Desired Nozzle Temp (\x00\xB0C):'), 1, 0)
+        groupBoxLayout.addWidget(QtWidgets.QLabel(f'Desired Nozzle Temp (\u00B0C):'), 1, 0)
         groupBoxLayout.addWidget(self.nozzleTempSpinBox, 1, 1)
         groupBoxLayout.addWidget(QtWidgets.QLabel('State:'), 1, 2)
         groupBoxLayout.addWidget(self.nozzleHeaterOnButton, 1, 3)
