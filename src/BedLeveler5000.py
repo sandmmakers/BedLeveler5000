@@ -338,7 +338,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.dialogs[self.Dialog.PROBE].show()
 
     def _processProbe(self, id_, context, response):
-        if 'type' not in context:
+        assert isinstance(context, dict), 'context must be a dict.'
+        if'type' not in context:
             self._error('Detected a printer response mismatch.')
         elif context['type'] == self.State.MANUAL_PROBE:
             assert(self.state == self.State.MANUAL_PROBE)
