@@ -169,6 +169,7 @@ class Marlin2Machine(QtCore.QObject):
         if error is not None:
             self.error = StrOptional(error)
             self.errorOccurred.emit(self, error)
+            self.finished.emit(self, None)
         else: # Move to next state
             self._transition(command.result)
 
