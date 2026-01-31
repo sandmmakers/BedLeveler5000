@@ -9,10 +9,11 @@ on:
       TAG:
         required: false
         type: string
+  workflow_dispatch:
 
 env:
   TAG: ${{inputs.TAG}}
-  PYTHON_VERSION: '3.12.1'
+  PYTHON_VERSION: '3.12.10'
   INSTALL_DIR: Install/BedLeveler5000
 
 jobs:
@@ -20,10 +21,10 @@ jobs:
     name: Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Build all
@@ -36,16 +37,36 @@ jobs:
           path: ${{ env.INSTALL_DIR }}
           if-no-files-found: error
 
+  build-windows-arm64:
+    name: Windows_Arm64
+    runs-on: windows-11-arm
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build all
+        shell: bash
+        run: |
+          ./build_all ${TAG:+--tag "${TAG}"}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts-Windows-Arm64
+          path: ${{ env.INSTALL_DIR }}
+          if-no-files-found: error
+
   build-linux:
     name: Linux
     runs-on: ubuntu-22.04
     env:
       DISPLAY: ':99.0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Install dependencies
@@ -63,14 +84,41 @@ jobs:
           path: ${{ env.INSTALL_DIR }}
           if-no-files-found: error
 
-  build-macos-intel:
-    name: MacOS_Intel
-    runs-on: macos-12
+  build-linux-arm64:
+    name: Linux_Arm64
+    runs-on: ubuntu-22.04-arm
+    env:
+      DISPLAY: ':99.0'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt install libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 x11-utils libgles2-mesa-dev libxcb-cursor0
+          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1920x1200x24 -ac +extension GLX
+      - name: Build all
+        shell: bash
+        run: |
+          ./build_all ${TAG:+--tag "${TAG}"}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts-Linux-Arm64
+          path: ${{ env.INSTALL_DIR }}
+          if-no-files-found: error
+
+  build-macos-intel:
+    name: MacOS_Intel
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Build all
@@ -87,10 +135,10 @@ jobs:
     name: MacOS_M1
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Build all

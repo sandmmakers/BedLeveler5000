@@ -13,90 +13,97 @@ class CommandM105(CommandBase):
 
         super().__init__(self.NAME + rPart + tPart)
 
-    def _processLine(self, line):
-        # Line 0: 'ok T:<FLOAT> /<FLOAT> B:<FLOAT> /<FLOAT> @:<FLOAT> B@:<FLOAT> FAN0@:<FLOAT> FAN1@:<FLOAT>'
-        #          |  |         |        |         |        |         |           |            +----------- Fan speed
-        #          |  |         |        |         |        |         |           +------------------------ Fan speed
-        #          |  |         |        |         |        |         +------------------------------------ Bed power
-        #          |  |         |        |         |        +---------------------------------------------- Tool power
-        #          |  |         |        |         +------------------------------------------------------- Bed temp (desired)
-        #          |  |         |        +----------------------------------------------------------------- Bed temp (actual)
-        #          |  |         +-------------------------------------------------------------------------- Tool temp (desired)
-        #          |  +------------------------------------------------------------------------------------ Tool temp (actual)
-        #          +--------------------------------------------------------------------------------------- ok
+    def __duplicateCheck(self, name: str, values: list[float|None]):
+        if not isinstance(values, list):
+            values = [values]
+        if any(value is not None for value in values):
+            raise ValueError(f'Found duplicate \'{name}\' token.')
+
+    def _processLine(self, line: str):
+        # Line 0: 'ok T:<FLOAT> /<FLOAT> B:<FLOAT> /<FLOAT> @:<FLOAT> B@:<FLOAT>'
+        #          |  |         |        |         |        |         +----------- Bed power
+        #          |  |         |        |         |        +--------------------- Tool power
+        #          |  |         |        |         +------------------------------ Bed temp (desired)
+        #          |  |         |        +---------------------------------------- Bed temp (actual)
+        #          |  |         +------------------------------------------------- Tool temp (desired)
+        #          |  +----------------------------------------------------------- Tool temp (actual)
+        #          +-------------------------------------------------------------- ok
 
         if self.isMetadata(line) or self.isAutoReport(line):
             return False
 
-        bedPower = None
-        bedTempDesired = None
         bedTempActual = None
-        toolPower = None
-        toolTempDesired = None
-        toolTempActual = None
-        tokens = line.replace(':', ' ').split()
+        bedTempDesired = None
+        bedPower = None
 
-        if tokens[0] != 'ok':
-            raise GCodeError(f'Unable to parse response: [{line}].')
+        toolTempActual = None
+        toolTempDesired = None
+        toolPower = None
+
+        tool0TempActual = None
+        tool0TempDesired = None
+        tool0Power = None
 
         try:
+            tokens = line.split()
+
+            if tokens[0] != 'ok':
+                raise ValueError(f'Line does not start with \'ok\'.')
+
             index = 1
             while index < len(tokens):
-                if tokens[index].startswith('T'):
-                    isCurrent = toolTempActual is None and (tokens[index] in ['T', 'T0'])
-                    if isCurrent:
-                        toolTempActual = float(tokens[index+1])
-                    index += 2
+                name, tempActualPower = tokens[index].split(':')
+                if '/' in name:
+                    raise ValueError(f'Unexpected field name: {name}.')
+                tempActualPower = float(tempActualPower)
+                index += 1
 
-                    if tokens[index].startswith('/'):
-                        if isCurrent:
-                            toolTempDesired = float(tokens[index][1:])
-                        index += 1
+                tempDesired = None
+                if index < len(tokens) and tokens[index].startswith('/'):
+                    if '@' in name:
+                        raise ValueError('Found unexpected desired value.')
+                    tempDesired = float(tokens[index][1:])
+                    index += 1
 
-                elif tokens[index] == 'B':
-                    if isCurrent:
-                        bedTempActual = float(tokens[index+1])
-                    index += 2
+                if name == '@':
+                    self.__duplicateCheck(name, toolPower)
+                    toolPower = tempActualPower
+                elif name == '@0':
+                    self.__duplicateCheck(name, tool0Power)
+                    tool0Power = tempActualPower
+                elif name == 'B@':
+                    self.__duplicateCheck(name, bedPower)
+                    bedPower = tempActualPower
+                elif name == 'T':
+                    self.__duplicateCheck(name, [toolTempActual, toolTempDesired])
+                    toolTempActual = tempActualPower
+                    toolTempDesired = tempDesired
+                elif name == 'T0':
+                    self.__duplicateCheck(name, [tool0TempActual, tool0TempDesired])
+                    tool0TempActual = tempActualPower
+                    tool0TempDesired = tempDesired
+                elif name == 'B':
+                    self.__duplicateCheck(name, [bedTempActual, bedTempDesired])
+                    bedTempActual = tempActualPower
+                    bedTempDesired = tempDesired
 
-                    if tokens[index].startswith('/'):
-                        bedTempDesired = float(tokens[index][1:])
-                        index += 1
+            if toolTempActual is None:
+                toolTempActual = tool0TempActual
+            if toolTempDesired is None:
+                toolTempDesired = tool0TempDesired
+            if toolPower is None:
+                toolPower = tool0Power
 
-                elif tokens[index] == 'C':
-                    index += 2
-                    if tokens[index].startswith('/'):
-                        index += 1
-
-                elif tokens[index].startswith('@'):
-                    if tokens[index] == '@':
-                        toolPower = float(tokens[index+1])
-                    index += 2
-
-                elif tokens[index] == 'B@':
-                    bedPower = float(tokens[index+1])
-                    index += 2
-
-                elif tokens[index] == 'P':
-                    index += 2
-
-                elif tokens[index] == 'A':
-                    index += 2
-
-                elif tokens[index].startswith('FAN'):
-                    index += 2
-
-                else:
-                    raise GCodeError(f'Unable to parse response: [{line}].')
-        except IndexError as exception:
+            self.result = {'toolActual':  toolTempActual,
+                           'toolDesired': toolTempDesired,
+                           'bedActual':   bedTempActual,
+                           'bedDesired':  bedTempDesired,
+                           'toolPower':   toolPower,
+                           'bedPower':    bedPower}
+            for key, value in self.result.items():
+                if value is None:
+                    raise ValueError(f'Required value \'{key}\' is missing.')
+        except (IndexError, ValueError) as exception:
             raise GCodeError(f'Unable to parse response: [{line}].') from exception
-        except ValueError as exception:
-            raise GCodeError(f'Incorrect numeric data type found in response: [{line}].') from exception
-
-        self.result = {'toolActual':  toolTempActual,
-                       'toolDesired': toolTempDesired,
-                       'bedActual':   bedTempActual,
-                       'bedDesired':  bedTempDesired,
-                       'toolPower':   toolPower,
-                       'bedPower':    bedPower}
 
         return True

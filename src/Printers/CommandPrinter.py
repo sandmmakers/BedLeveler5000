@@ -1,6 +1,7 @@
 from .Printer import Printer
 from Common.Points import Point2F
 from Common.LoggedFunction import loggedFunction
+from Common.Optional import StrOptional
 from PySide6 import QtCore
 import abc
 import enum
@@ -67,24 +68,24 @@ class GetMeshCoordinatesResult(NamedTuple):
 class CommandPrinter(Printer):
     __metaclass__ = abc.ABCMeta
 
-    sent = QtCore.Signal(CommandType, str, dict, str) # type, id, context, command)
-    finished = QtCore.Signal(CommandType, str, dict, bool, object) # type, id, context, error, result
-    errorOccurred = QtCore.Signal(CommandType, str, dict, str) # type, id, context, error message
+    sent = QtCore.Signal(CommandType, str, object, str) # type, id, context, command)
+    finished = QtCore.Signal(CommandType, str, object, StrOptional, object) # type, id, context, error, result
+    errorOccurred = QtCore.Signal(CommandType, str, object, str) # type, id, context, error message
 
-    inited = QtCore.Signal(str, dict) # id, context
-    homed = QtCore.Signal(str, dict) # id, context
-    gotTemperatures = QtCore.Signal(str, dict, GetTemperaturesResult) # id, context, result
-    gotProbeOffsets = QtCore.Signal(str, dict, GetProbeOffsetsResult) # id, context, result
-    gotCurrentPosition = QtCore.Signal(str, dict, GetCurrentPositionResult) # id, context, result
-    gotTravelBounds = QtCore.Signal(str, dict, GetBoundsResult) # id, context, result
-    gotMeshCoordinates = QtCore.Signal(str, dict, GetMeshCoordinatesResult) # id, context, result
-    bedTemperatureSet = QtCore.Signal(str, dict) # id, context
-    nozzleTemperatureSet = QtCore.Signal(str, dict) # id, context
-    gotDefaultProbeSampleCount = QtCore.Signal(str, dict, int) # id, context, result
-    gotDefaultProbeZHeight = QtCore.Signal(str, dict, float) # id, context, result
-    gotDefaultProbeXYSpeed = QtCore.Signal(str, dict, float) # id, context, result
-    probed = QtCore.Signal(str, dict, ProbeResult) # id, context, result
-    moved = QtCore.Signal(str, dict) # id, context
+    inited = QtCore.Signal(str, object) # id, context
+    homed = QtCore.Signal(str, object) # id, context
+    gotTemperatures = QtCore.Signal(str, object, GetTemperaturesResult) # id, context, result
+    gotProbeOffsets = QtCore.Signal(str, object, GetProbeOffsetsResult) # id, context, result
+    gotCurrentPosition = QtCore.Signal(str, object, GetCurrentPositionResult) # id, context, result
+    gotTravelBounds = QtCore.Signal(str, object, GetBoundsResult) # id, context, result
+    gotMeshCoordinates = QtCore.Signal(str, object, GetMeshCoordinatesResult) # id, context, result
+    bedTemperatureSet = QtCore.Signal(str, object) # id, context
+    nozzleTemperatureSet = QtCore.Signal(str, object) # id, context
+    gotDefaultProbeSampleCount = QtCore.Signal(str, object, int) # id, context, result
+    gotDefaultProbeZHeight = QtCore.Signal(str, object, float) # id, context, result
+    gotDefaultProbeXYSpeed = QtCore.Signal(str, object, float) # id, context, result
+    probed = QtCore.Signal(str, object, ProbeResult) # id, context, result
+    moved = QtCore.Signal(str, object) # id, context
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

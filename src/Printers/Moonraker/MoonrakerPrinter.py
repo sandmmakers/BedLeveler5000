@@ -7,6 +7,7 @@ from Printers.CommandPrinter import GetBoundsResult
 from Printers.CommandPrinter import GetMeshCoordinatesResult
 from Printers.CommandPrinter import ProbeResult
 from Common.Common import LOG_ALL
+from Common.Optional import StrOptional
 
 from PySide6 import QtCore
 from PySide6 import QtNetwork
@@ -150,7 +151,7 @@ class MoonrakerMachine(QtCore.QObject):
         self.host = host
         self.id_ = id_
         self.context = context
-        self.error = None
+        self.error = StrOptional()
         self.setTransition(None)
         self.reply = None
 
@@ -195,7 +196,7 @@ class MoonrakerMachine(QtCore.QObject):
         # Check for protocol error
         if 'error' in replyJson and 'message' in replyJson['error']:
             message = replyJson['error']['message']
-            self.error = message
+            self.error = StrOptional(message)
             logging.error(f'Error {replyJson}')
             self.errorOccurred.emit(self, message)
             self.finished.emit(self, message)
@@ -217,10 +218,10 @@ class MoonrakerMachine(QtCore.QObject):
                 self._transition(replyJson['result'])
             except ValueError as exception:
                 message = str(exception)
-                self.error = message
+                self.error = StrOptional(message)
                 logging.error(message)
                 self.errorOccurred.emit(self, message)
-                self.finished.emit(self, message)
+                self.finished.emit(self, None)
 
     def finish(self, signal, result=None):
         if result is None:
@@ -272,23 +273,46 @@ class MoonrakerMachine(QtCore.QObject):
         return cls._getField(replyJson, configPath)
 
     @classmethod
-    def _getConfigSection(cls, config, sectionName, *, allowMissing=False):
-        section = config.get(sectionName)
+    def _getConfigSection(cls, config, sectionName, *, allowMissing=False, named=False):
+        if named:
+            section = None
+            for key in config.keys():
+                tokens = key.split(maxsplit=1)
+                if tokens[0] != sectionName:
+                    continue
+
+                # Currently allow multiple extra tokens
+                if len(tokens) == 0:
+                    raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, unnamed \'{sectionName}\' section found in \'printer.cfg\'.')
+
+                # Currently only a single named section is supported
+                if section is not None:
+                    raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, currently multiple \'{sectionName}\' sections in \'printer.cfg\' is unsupported.')
+
+                section = cls.ConfigSection(key, config[key])
+        else:
+            section = config.get(sectionName)
+            if section is not None:
+                section = cls.ConfigSection(sectionName, section)
         if section is None:
             if allowMissing:
                 return None
             else:
                 raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'{sectionName}\' section not found in \'printer.cfg\'.')
-        return cls.ConfigSection(sectionName, section)
+        return section
 
     @classmethod
     def _getConfigSectionProbeLike(cls, config):
         section = cls._getConfigSection(config, 'bltouch', allowMissing=True)
         if section is None:
-            section = cls._getConfigSection(config, 'probe', allowMissing=True)
+            section = cls._getConfigSection(config, 'probe_eddy_current', allowMissing=True, named=True)
+            if section is None:
+                section = cls._getConfigSection(config, 'probe_eddy_ng', allowMissing=True, named=True)
+                if section is None:
+                    section = cls._getConfigSection(config, 'probe', allowMissing=True)
 
         if section is None:
-            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, \'bltouch\' nor \'probe\' section not found in \'printer.cfg\'.')
+            raise ValueError(f'{cls.__name__[:-len("Machine")]} failed, no probe-like found (\'bltouch\', \'probe_eddy_current\', \'probe_eddy_ng\', or \'probe\') section found in \'printer.cfg\'.')
         return section
 
     @classmethod
@@ -306,7 +330,7 @@ class MoonrakerMachine(QtCore.QObject):
     def _getConfigSectionProbeOffsets(cls, probe):
         return (cls._getConfigSectionValue(probe, 'x_offset', float, default=0.0),
                 cls._getConfigSectionValue(probe, 'y_offset', float, default=0.0),
-                cls._getConfigSectionValue(probe, 'z_offset', float))
+                cls._getConfigSectionValue(probe, 'z_offset', float, default=0.0))
 
     @classmethod
     def _getConfigSectionTravelBounds(cls, config):
@@ -324,7 +348,7 @@ class MoonrakerMachine(QtCore.QObject):
 
 class InitMachine(MoonrakerMachine):
     TYPE = CommandType.INIT
-    inited = QtCore.Signal(str, dict)
+    inited = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -369,7 +393,7 @@ class InitMachine(MoonrakerMachine):
 
 class HomeMachine(MoonrakerMachine):
     TYPE = CommandType.HOME
-    homed = QtCore.Signal(str, dict)
+    homed = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, x, y, z, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -396,7 +420,7 @@ class HomeMachine(MoonrakerMachine):
 
 class GetTemperaturesMachine(MoonrakerMachine):
     TYPE = CommandType.GET_TEMPERATURES
-    gotTemperatures = QtCore.Signal(str, dict, GetTemperaturesResult)
+    gotTemperatures = QtCore.Signal(str, object, GetTemperaturesResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -419,7 +443,7 @@ class GetTemperaturesMachine(MoonrakerMachine):
 
 class GetProbeOffsetsMachine(MoonrakerMachine):
     TYPE = CommandType.GET_PROBE_OFFSETS
-    gotProbeOffsets = QtCore.Signal(str, dict, GetProbeOffsetsResult)
+    gotProbeOffsets = QtCore.Signal(str, object, GetProbeOffsetsResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -442,7 +466,7 @@ class GetProbeOffsetsMachine(MoonrakerMachine):
 
 class GetCurrentPositionMachine(MoonrakerMachine):
     TYPE = CommandType.GET_CURRENT_POSITION
-    gotCurrentPosition = QtCore.Signal(str, dict, GetCurrentPositionResult)
+    gotCurrentPosition = QtCore.Signal(str, object, GetCurrentPositionResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -477,7 +501,7 @@ class GetCurrentPositionMachine(MoonrakerMachine):
 
 class GetTravelBoundsMachine(MoonrakerMachine):
     TYPE = CommandType.GET_TRAVEL_BOUNDS
-    gotTravelBounds = QtCore.Signal(str, dict, GetBoundsResult)
+    gotTravelBounds = QtCore.Signal(str, object, GetBoundsResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -499,7 +523,7 @@ class GetTravelBoundsMachine(MoonrakerMachine):
 
 class GetMeshCoordinatesMachine(MoonrakerMachine):
     TYPE = CommandType.GET_MESH_COORDINATES
-    gotMeshCoordinates = QtCore.Signal(str, dict, GetMeshCoordinatesResult)
+    gotMeshCoordinates = QtCore.Signal(str, object, GetMeshCoordinatesResult)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -540,7 +564,7 @@ class GetMeshCoordinatesMachine(MoonrakerMachine):
 
 class SetBedTemperatureMachine(MoonrakerMachine):
     TYPE = CommandType.SET_BED_TEMPERATURE
-    bedTemperatureSet = QtCore.Signal(str, dict)
+    bedTemperatureSet = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, temp, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent=None)
@@ -556,7 +580,7 @@ class SetBedTemperatureMachine(MoonrakerMachine):
 
 class SetNozzleTemperatureMachine(MoonrakerMachine):
     TYPE = CommandType.SET_NOZZLE_TEMPERATURE
-    nozzleTemperatureSet = QtCore.Signal(str, dict)
+    nozzleTemperatureSet = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, temp, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -572,7 +596,7 @@ class SetNozzleTemperatureMachine(MoonrakerMachine):
 
 class GetDefaultProbeSampleCountMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_SAMPLE_COUNT
-    gotDefaultProbeSampleCount = QtCore.Signal(str, dict, int)
+    gotDefaultProbeSampleCount = QtCore.Signal(str, object, int)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -590,7 +614,7 @@ class GetDefaultProbeSampleCountMachine(MoonrakerMachine):
 
 class GetDefaultProbeZHeightMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_Z_HEIGHT
-    gotDefaultProbeZHeight = QtCore.Signal(str, dict, float)
+    gotDefaultProbeZHeight = QtCore.Signal(str, object, float)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -608,7 +632,7 @@ class GetDefaultProbeZHeightMachine(MoonrakerMachine):
 
 class GetDefaultProbeXYSpeedMachine(MoonrakerMachine):
     TYPE = CommandType.GET_DEFAULT_PROBE_XY_SPEED
-    gotDefaultProbeXYSpeed = QtCore.Signal(str, dict, float)
+    gotDefaultProbeXYSpeed = QtCore.Signal(str, object, float)
 
     def __init__(self, networkAccessManager, host, id_, context, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -626,7 +650,7 @@ class GetDefaultProbeXYSpeedMachine(MoonrakerMachine):
 
 class ProbeMachine(MoonrakerMachine):
     TYPE = CommandType.PROBE
-    probed = QtCore.Signal(str, dict, ProbeResult)
+    probed = QtCore.Signal(str, object, ProbeResult)
 
     def __init__(self, networkAccessManager, host, id_, context, x, y, sampleCount, xySpeed, probeHeight, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
@@ -688,7 +712,7 @@ class ProbeMachine(MoonrakerMachine):
 
 class MoveMachine(MoonrakerMachine):
     TYPE = CommandType.MOVE
-    moved = QtCore.Signal(str, dict)
+    moved = QtCore.Signal(str, object)
 
     def __init__(self, networkAccessManager, host, id_, context, x, y, z, e, f, wait, relative, parent=None):
         super().__init__(networkAccessManager, host, id_, context, parent)
