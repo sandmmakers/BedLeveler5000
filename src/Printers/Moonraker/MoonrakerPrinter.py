@@ -182,46 +182,44 @@ class MoonrakerMachine(QtCore.QObject):
     def processReply(self):
         assert(self.sender() == self.reply)
 
+        # Extract information from the reply
+        replyErrorStatus = self.reply.error()
         replyBuffer = self.reply.readAll()
         self.logger.log(LOG_ALL, f'Received: {replyBuffer}')
-
-        # TODO: Add error handling on conversion and parsing
-        replyJson = json.loads(str(replyBuffer, 'ascii'))
-        self.logger.debug(f'Received: {replyJson}')
-
-        errorStatus = self.reply.error()
         self.reply.deleteLater()
         self.reply = None
 
-        # Check for protocol error
-        if 'error' in replyJson and 'message' in replyJson['error']:
-            message = replyJson['error']['message']
-            self.error = StrOptional(message)
-            logging.error(f'Error {replyJson}')
-            self.errorOccurred.emit(self, message)
-            self.finished.emit(self, message)
+        errorMessage = None
 
         # Handle REST errors
-        elif errorStatus != QtNetwork.QNetworkReply.NoError:
-            message = f'Rest error occured ({errorStatus}).'
-            logging.error(message)
-            self.errorOccurred.emit(self, message)
-            return
-
-        else: # Move to next state
-            logging.debug(f'Entering {self._transition.__qualname__}' \
-                          f' Id: {self.id_}' \
-                          f' Context: {self.context}' \
-                          f' Reply: {replyJson}')
-
+        if replyErrorStatus != QtNetwork.QNetworkReply.NoError:
+            errorMessage = f'Rest error occured ({replyErrorStatus}).'
+        else:
+            # Parse reply JSON
             try:
-                self._transition(replyJson['result'])
+                replyJson = json.loads(str(replyBuffer, 'ascii'))
+                self.logger.debug(f'Received: {replyJson}')
+
+                # Check for protocol error
+                if 'error' in replyJson and 'message' in replyJson['error']:
+                    errorMessage = f'Moonraker reported an error: {replyJson["error"]["message"]}'
+                else: # Move to next state
+                    logging.debug(f'Entering {self._transition.__qualname__}' \
+                                  f' Id: {self.id_}' \
+                                  f' Context: {self.context}' \
+                                  f' Reply: {replyJson}')
+
+                    self._transition(replyJson['result'])
+            except json.decoder.JSONDecodeError:
+                errorMessage = 'Failed to parse JSON returned from Moonraker.'
             except ValueError as exception:
-                message = str(exception)
-                self.error = StrOptional(message)
-                logging.error(message)
-                self.errorOccurred.emit(self, message)
-                self.finished.emit(self, None)
+                errorMessage = str(exception)
+
+        if errorMessage is not None:
+            self.error = StrOptional(errorMessage)
+            logging.error(errorMessage)
+            self.errorOccurred.emit(self, errorMessage)
+            self.finished.emit(self, None)
 
     def finish(self, signal, result=None):
         if result is None:
