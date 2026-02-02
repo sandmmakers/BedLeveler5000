@@ -352,11 +352,20 @@ class InitMachine(MoonrakerMachine):
         super().__init__(networkAccessManager, host, id_, context, parent)
 
     def start(self):
-        self.setTransition(self._enterGetConfigFile)
+        self.setTransition(self._enterVerifyHomed)
         self.getGCode('G28')
 
-    def _enterGetConfigFile(self, replyJson):
+    def _enterVerifyHomed(self, replyJson):
         self._verifyOk(replyJson, 'Homing failed during initialization.')
+        self.setTransition(self._enterGetConfigFile)
+        self.get('/printer/objects/query?toolhead')
+
+    def _enterGetConfigFile(self, replyJson):
+        homedAxes = self._getField(replyJson, ['status', 'toolhead', 'homed_axes'])
+        unhomedAxes = ','.join([axis for axis in ['x', 'y', 'z'] if axis not in homedAxes])
+        if len(unhomedAxes) > 0:
+            raise ValueError(f'Failed to home {"axis" if len(unhomedAxes) == 1 else "axes"}: {unhomedAxes}')
+
         self.setTransition(self._enterAbsolutePositioning)
         self.get('/printer/objects/query?configfile')
 
@@ -400,8 +409,6 @@ class HomeMachine(MoonrakerMachine):
         self.z = z
 
     def start(self):
-        self.setTransition(self._enterDone)
-
         if self.x is None and self.y is None and self.z is None:
             parts = ''
         else:
@@ -410,10 +417,27 @@ class HomeMachine(MoonrakerMachine):
             zPart = ' Z' if self.z else ''
             parts = xPart + yPart + zPart
 
+        self.setTransition(self._enterVerifyHomed)
         self.getGCode('G28' + parts)
 
-    def _enterDone(self, replyJson):
+    def _enterVerifyHomed(self, replyJson):
         self._verifyOk(replyJson, 'Homing failed.')
+        self.setTransition(self._enterDone)
+        self.get('/printer/objects/query?toolhead')
+
+    def _enterDone(self, replyJson):
+        homedAxes = self._getField(replyJson, ['status', 'toolhead', 'homed_axes'])
+        required = []
+        if self.x:
+            required.append('x')
+        if self.y:
+            required.append('y')
+        if self.z:
+            required.append('z')
+        unhomedAxes = ','.join([axis for axis in required if axis not in homedAxes])
+        if len(unhomedAxes) > 0:
+            raise ValueError(f'Failed to home {"axis" if len(unhomedAxes) == 1 else "axes"}: {unhomedAxes}')
+
         self.finish(self.homed)
 
 class GetTemperaturesMachine(MoonrakerMachine):
