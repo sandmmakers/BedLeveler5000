@@ -1,33 +1,32 @@
 from .Common import LOG_ALL
 from .Common import toArgumentString
-import functools
 import logging
-import types
+import wrapt
 
-def loggedFunction(helper=None, level=logging.INFO):
-    assert callable(helper) or helper is None
-    if level is None:
-        level == LOG_ALL
-    elif isinstance(level, str):
+def loggedFunction(wrapped=None, *, level=logging.INFO):
+    if wrapped is None:
+        return wrapt.PartialCallableObjectProxy(loggedFunction, level=level)
+
+    if isinstance(level, str):
         upper = level.upper()
         level = LOG_ALL if upper == 'ALL' else getattr(logging, upper)
 
-    def wrap(function):
-        @functools.wraps(function)
-        def logFunction(*args, **kwargs):
-            className, dot, functionName = function.__qualname__.rpartition('.')
-            logger = logging.getLogger(className)
-            argsStart = 0 if isinstance(function, types.FunctionType) == 0 else 1
-            argumentString = toArgumentString(args[argsStart:], kwargs)
-            logger.log(level, f'{functionName}({argumentString})')
-            return function(*args, **kwargs)
-        return logFunction
-    return wrap(helper) if callable(helper) else wrap
+    @wrapt.decorator
+    def wrapper(wrapped, instance, args, kwargs):
+        className, dot, functionName = wrapped.__qualname__.rpartition('.')
+        logger = logging.getLogger(className)
+        argumentString = toArgumentString(args, kwargs)
+        logger.log(level, f'{functionName}({argumentString})')
+        return wrapped(*args, **kwargs)
+
+    # pylint: disable-next=no-value-for-parameter
+    return wrapper(wrapped)
 
 if __name__ == '__main__':
     from .Common import configureLogging
 
     configureLogging(level='debug', console='True')
+    logger = logging.getLogger()
 
     @loggedFunction
     def MyFunction0():
@@ -44,19 +43,24 @@ if __name__ == '__main__':
         pass
     MyDebugFunction()
 
-    @loggedFunction(level='all')
-    def My1Function():
+    @loggedFunction(level=LOG_ALL)
+    def MyAllFunctionConst():
         pass
-    My1Function()
+    MyAllFunctionConst()
 
-    @staticmethod
+    @loggedFunction(level='all')
+    def MyAllFunctionStr():
+        pass
+    MyAllFunctionStr()
+
     @loggedFunction
+    @staticmethod
     def MyStaticFunction0():
         pass
     MyStaticFunction0()
 
-    @staticmethod
     @loggedFunction
+    @staticmethod
     def MyStaticFunction2(a, b):
         pass
     MyStaticFunction2(1, 2)
