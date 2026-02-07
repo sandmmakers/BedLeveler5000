@@ -3,3 +3,4 @@ pillow
 pylint
 pytest
 pytest-qt
+wrapt
