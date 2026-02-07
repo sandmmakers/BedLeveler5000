@@ -11,13 +11,21 @@ import sys
 import os
 
 class CommonArgumentParser(argparse.ArgumentParser):
+    class VersionAction(argparse.Action):
+        def __init__(self, option_strings, dest, version=None, **kwargs):
+            super().__init__(option_strings, dest, nargs=0, **kwargs)
+            self.version = version
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            parser._showMessage(f'Version: {self.version}')
+
     def __init__(self, *args, addPrinters=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.showDialog = platform.system() == 'Windows'
         self.errorColumnCount = 40
         self.helpColumnCount = 80
 
-        self.add_argument('-v', '--version', action='version', version=QtCore.QCoreApplication.applicationVersion())
+        self.add_argument('-v', '--version', action=(self.VersionAction if self.showDialog else 'version'), version=QtCore.QCoreApplication.applicationVersion())
         self.add_argument('--log-level', choices=['all', 'debug', 'info', 'warning', 'error', 'critical'], default=None, help='logging level')
         self.add_argument('--log-console', action='store_true', help='log to the console')
         self.add_argument('--log-file', type=pathlib.Path, default=None, help='log file')
