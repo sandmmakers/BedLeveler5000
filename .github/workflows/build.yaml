@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           ./build_all ${TAG:+--tag "${TAG}"}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Artifacts-Windows
           path: ${{ env.INSTALL_DIR }}
@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: |
           ./build_all ${TAG:+--tag "${TAG}"}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Artifacts-Windows-Arm64
           path: ${{ env.INSTALL_DIR }}
@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           ./build_all ${TAG:+--tag "${TAG}"}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Artifacts-Linux
           path: ${{ env.INSTALL_DIR }}
@@ -105,7 +105,7 @@ jobs:
         shell: bash
         run: |
           ./build_all ${TAG:+--tag "${TAG}"}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Artifacts-Linux-Arm64
           path: ${{ env.INSTALL_DIR }}
@@ -125,7 +125,7 @@ jobs:
         shell: bash
         run: |
           ./build_all ${TAG:+--tag "${TAG}"}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Artifacts-MacOS-Intel
           path: ${{ env.INSTALL_DIR }}
@@ -145,7 +145,7 @@ jobs:
         shell: bash
         run: |
           ./build_all ${TAG:+--tag "${TAG}"}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: Artifacts-MacOS-M1
           path: ${{ env.INSTALL_DIR }}
