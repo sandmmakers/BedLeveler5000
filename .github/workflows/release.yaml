@@ -28,7 +28,7 @@ jobs:
       HASHES_FILE: BedLeveler5000-${{ github.ref_name }}-SHA-256.txt
       ASC_FILE: BedLeveler5000-${{ github.ref_name }}-SHA-256.txt.asc
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
       - name: Create assets
         run: |
           mv Artifacts-Windows ${WINDOWS_STEM}
